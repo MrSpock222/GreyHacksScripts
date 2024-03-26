@@ -15,3 +15,5 @@ getmail ==> to hack a pc without ports and gives Mailaccounts (works only from t
 router!)
 
 encode ==> default encoder from an random NPC
+
+Scripts in development and kinda in beta
