@@ -1,0 +1,25 @@
+crypto = include_lib("/lib/crypto.so")
+if not crypto then crypto = include_lib(current_path + "/crypto.so")
+if not crypto then
+    crypto = include_lib(current_path + "/crypto.so")
+end if
+
+if params.len != 3 or params[0] == "-h" or params[0] == "--help" then exit("<b>Usage: "+program_path.split("/")[-1]+" [ip_address] [mem] [value]</b>")
+metaxploit = include_lib("/lib/metaxploit.so")
+if not metaxploit then
+    metaxploit = include_lib(current_path + "/metaxploit.so")
+end if
+if not metaxploit then metaxploit = include_lib(current_path + "/metaxploit.so")
+if not metaxploit then exit("Error: Can't find metaxploit library in the /lib path or the current folder")
+address = params[0]
+mem = params[1]
+value = params[2]
+net_session = metaxploit.net_use( address )
+if not net_session then exit("Error: can't connect to net session")
+
+metaLib = net_session.dump_lib
+
+result = metaLib.overflow(mem, value)
+
+if typeof(result) == "shell" then result.start_terminal
+exit("Exploit Failed")

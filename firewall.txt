@@ -1,0 +1,35 @@
+if params.len != 1 or params[0] == "-h" or params[0] == "--help" then exit("<b>Usage: "+program_path.split("/")[-1]+" [ip_address]</b>")
+metaxploit = include_lib("/lib/metaxploit.so")
+if not metaxploit then
+    metaxploit = include_lib(current_path + "/metaxploit.so")
+end if
+if not metaxploit then exit("Error: Can't find metaxploit library in the /lib path or the current folder")
+address = params[0]
+net_session = metaxploit.net_use( address )
+if not net_session then exit("Error: can't connect to net session")
+metaLib = net_session.dump_lib
+listMem = metaxploit.scan(metaLib)
+index = 1
+shell = null
+
+for itemMem in listMem
+	print(index +": [" + itemMem + "]")
+	index = index + 1
+end for
+
+for i in range(1,index - 1)
+	li = listMem[i - 1]
+	adress = metaxploit.scan_address(metaLib, li).split("Unsafe check: ")
+	i = 1
+	for add in adress
+		if add == adress[0] then continue
+		val = add[add.indexOf("<b>")+3:add.indexOf("</b>")]
+		result = metaLib.overflow(li, val)	
+		if typeof(result) != "shell" and typeof(result) != "computer" then continue
+		if typeof(result) == "shell" then shell = result
+		if typeof(result) == "computer" then comp = result	
+		result = metaLib.overflow(li, val)	
+	end for
+end for
+
+if not result then exit("Program ended")

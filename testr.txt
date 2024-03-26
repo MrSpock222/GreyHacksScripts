@@ -1,0 +1,74 @@
+if params.len != 1 or params[0] == "-h" or params[0] == "--help" then exit("<b>Usage: "+program_path.split("/")[-1]+" [ip_address]</b>")
+metaxploit = include_lib("/lib/metaxploit.so")
+if not metaxploit then metaxploit = include_lib(current_path + "/metaxploit.so")
+if not metaxploit then metaxploit = include_lib(current_path + "/metaxploit.so")
+if not metaxploit then exit("Error: Can't find metaxploit library in the /lib path or the current folder")
+address = params[0]
+net_session = metaxploit.net_use( address )
+if not net_session then exit("Error: can't connect to net session")
+metaLib = net_session.dump_lib
+
+quit = function(shell, pass)
+	print("Root Password: ")
+	get_shell.launch(current_path + "/decipher",pass)
+	hostShell = get_shell
+	remoteShell = shell
+	
+	parent = get_shell.host_computer.File(current_path)
+	if parent.is_folder then
+   	files = parent.get_files
+   	for file in files
+		hostShell.scp(current_path + "/" + file.name, "/root", remoteShell)
+  	 end for
+	end if
+	
+	
+	
+	shell.start_terminal
+end function
+
+shell = null
+pass = null
+
+memory = metaxploit.scan(metaLib)
+for mem in memory
+	address = metaxploit.scan_address(metaLib, mem).split("Unsafe check: ")
+	for add in address	
+		if add == address[0] then continue
+		if shell and pass then quit(shell, pass)
+
+		value = add[add.indexOf("<b>")+3: add.indexOf("</b>")]
+		value = value.replace("\n", "")
+		result = metaLib.overflow(mem, value, "haha")
+		print("mem: " + mem + "\n" + "value: " + value)
+		if typeof(result) != "shell" and typeof(result) != "computer" then continue
+		if typeof(result) == "shell" then shell = result
+		if typeof(result) == "shell" then comp = result.host_computer
+		if typeof(result) == "computer" then comp = result
+		
+		file = comp. File("/etc/passwd")
+		if not file then continue
+		cont = file.get_content
+		if not cont then continue
+		pass = cont.split("\n")[0]
+		if shell then quit(shell, pass)
+	end for
+end for
+
+if shell then 
+hostShell = get_shell
+	remoteShell = shell
+	
+	parent = get_shell.host_computer.File(current_path)
+	if parent.is_folder then
+   	files = parent.get_files
+   	for file in files
+		hostShell.scp(current_path + "/" + file.name, home_dir, remoteShell)
+  	 end for
+end if
+shell.start_terminal
+end if
+
+exit("Exploit Failed")
+
+
