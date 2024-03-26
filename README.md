@@ -1,4 +1,4 @@
-Scrits:
+Scripts:
 
 test ==> for hacking pcs
 testr ==> for hacking  routers
