@@ -16,4 +16,6 @@ router!)
 
 encode ==> default encoder from an random NPC
 
+testIP ==> to test the Scripts form Visual  Studio
+
 Scripts in development and kinda in beta
