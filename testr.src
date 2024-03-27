@@ -48,16 +48,29 @@ users = []
 for obj in passwords
 	for i in obj
 		if i then
-		users.push("\n" + num + ": " + i)
+		users.push(i)
+		print("\n" + num + ": " + i)
 		num = num + 1
 		end if
 	end for
 end for
 
-if users.len < 1 then exit("No passwords found.")
-for n in users
-	print(n)
-end for
+if users.len < 1 then exit("Passwords couldnt get collected")
+
+option = ""
+inputOk = false
+	while( not inputOk )
+		option = user_input("Select user: ").to_int
+		if typeof(option) != "number" or (option < 1 or option > users.len) then
+			print("Invalid input. Type a valid number")
+		else
+			inputOk = true
+		end if
+	end while
+
+print("<"+ users[option-1] +">")
+print(get_shell.launch(current_path + "/decipher", users[option-1]))
+
 
 end function
 
@@ -99,12 +112,32 @@ for mem in memory
 	end for
 end for
 
-if passwords.len < 1 then exit("No mails found.")
+
 num = 1
 for obj in passwords
 	print(num + ": " + obj)
 	num = num + 1
 end for
+
+
+
+if passwords.len < 1 then exit("Emails couldnt get collected")
+
+option = ""
+inputOk = false
+	while( not inputOk )
+		option = user_input("Select user: ").to_int
+		if typeof(option) != "number" or (option < 1 or option > passwords.len) then
+			print("Invalid input. Type a valid number")
+		else
+			inputOk = true
+		end if
+	end while
+
+
+print("<"+ passwords[option-1] +">")
+print(get_shell.launch(current_path + "/decipher", passwords[option-1]))
+
 
 end function
 
@@ -129,8 +162,7 @@ for mem in memory
 
 	end for
 end for
-if shell then shell.start_terminal
-exit("Exploit failed")
+
 
 
 end function
