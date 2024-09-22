@@ -82,21 +82,24 @@ end if
 
 memory = null
 
-codeCont = get_shell.host_computer.File("/lib/codes.txt").get_content.split(":")
+codeCont = get_shell.host_computer.File(current_path + "/codes.txt").get_content.split(":")
 
 for line in codeCont
 	if line == "" then break
-	line = line.split(" ")
-	print(line[0])
-	if line[0] + " " + line[1] != typeOfCode then continue
-	memory = line[2]
+	le = line.split(" ")
+	if le[0] + " " + le[1] != typeOfCode then continue
+	memory = line[line.indexOf("[") : line.indexOf(":")]
+	memory = memory.split("""")
+	print(memory[0])
+	break
 end for
 
 if memory == null then
 	memory = metaxploit.scan(metaLib)
 	toWriteMem = " " + memory
-	get_shell.host_computer.File("/lib/codes.txt").set_content(get_shell.host_computer.File("/lib/codes.txt").get_content + typeOfCode + toWriteMem + ":")
+	get_shell.host_computer.File(current_path + "/codes.txt").set_content(get_shell.host_computer.File(current_path + "/codes.txt").get_content + typeOfCode + toWriteMem + ":")
 end if
+
 
 getPasswords = function()
 shell = null
