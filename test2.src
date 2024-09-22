@@ -1,0 +1,269 @@
+
+if params.len != 1 or params[0] == "-h" or params[0] == "--help" then
+	exit("<b>Usage: " + program_path.split("/")[-1] + " [ip_address]</b>")
+end if
+
+metaxploit = include_lib("/lib/metaxploit.so")
+if not metaxploit then metaxploit = include_lib(current_path + "/metaxploit.so")
+if not metaxploit then exit("Error: Can't find metaxploit library in the /lib path or the current folder")
+
+address = params[0]
+isLanIp = is_lan_ip( address )
+
+if isLanIp then
+   router = get_router;
+else 
+   router = get_router( address )
+end if
+
+if router == null then exit("nmap: ip address not found")
+ports = null
+
+if not isLanIp then
+   ports = router.used_ports
+else
+   ports = router.device_ports(address)
+end if
+
+if ports == null then exit("nmap: ip address not found")
+if typeof(ports) == "string" then exit(ports)
+      
+info = "PORT STATE SERVICE VERSION LAN"   
+print("\nStarting nmap v1.1 at " + current_date)
+print("Interesting ports on " + params[0] + "\n")
+if(ports.len == 0) then exit("Scan finished. No open ports.")
+
+pr = []
+infoPr = []
+portIndex = 1
+for port in ports
+   service_info = router.port_info(port)
+   infoPr.push(service_info)
+   lan_ips = port.get_lan_ip
+   port_status = "open"
+
+   if(port.is_closed and not isLanIp) then
+      port_status = "closed"
+   end if
+   info = info + "\n" + portIndex + " " + port.port_number + " " + port_status + " " + service_info + " " + lan_ips
+   pr.push(port.port_number)
+   portIndex = portIndex + 1
+end for
+print("INDEX " + format_columns(info) + "\n")
+
+option = ""
+inputOk = false
+	while( not inputOk )
+		option = user_input("Select index: ").to_int
+		if typeof(option) != "number" or (option < 1 or option > pr.len) then
+			print("Invalid input. Type a valid number")
+		else
+			inputOk = true
+		end if
+	end while
+
+
+port = pr[option - 1]
+net_session = metaxploit.net_use(address, port)
+
+if not net_session then
+	exit("Error: can't connect to net session")
+end if
+
+metaLib = net_session.dump_lib
+
+
+service_info = infoPr[option - 1]
+if service_info.split(" ")[0] == "students" or service_info.split(" ")[0] == "employees" then 
+	typeOfCode = "ssh " + service_info.split(" ")[1]
+else 
+	typeOfCode = service_info
+end if
+
+memory = null
+
+codeCont = get_shell.host_computer.File("/lib/codes.txt").get_content.split(":")
+
+for line in codeCont
+	if line == "" then break
+	line = line.split(" ")
+	print(line[0])
+	if line[0] + " " + line[1] != typeOfCode then continue
+	memory = line[2]
+end for
+
+if memory == null then
+	memory = metaxploit.scan(metaLib)
+	toWriteMem = " " + memory
+	get_shell.host_computer.File("/lib/codes.txt").set_content(get_shell.host_computer.File("/lib/codes.txt").get_content + typeOfCode + toWriteMem + ":")
+end if
+
+getPasswords = function()
+shell = null
+pass = null
+passwords = []
+
+for mem in memory
+	address = metaxploit.scan_address(metaLib, mem).split("Unsafe check: ")
+
+	for add in address
+		if add == address[0] then continue
+		value = add[add.indexOf("<b>") + 3 : add.indexOf("</b>")]
+		value = value.replace("\n", "")
+		result = metaLib.overflow(mem, value)
+		
+		if typeof(result) != "shell" and typeof(result) != "computer" then continue
+		if typeof(result) == "shell" then shell = result
+		if typeof(result) == "shell" then comp = result.host_computer
+		if typeof(result) == "computer" then comp = result
+
+		file = comp.File("/etc/passwd")
+		if not file then continue
+		cont = file.get_content
+		if not cont then continue
+		pass = cont.split("\n")
+		for obj in pass
+			passwords.push(pass)
+		end for
+	end for
+end for
+
+num = 1
+users = []
+for obj in passwords
+	for i in obj
+		if i then
+		users.push(i)
+		print("\n" + num + ": " + i)
+		num = num + 1
+		end if
+	end for
+end for
+
+if users.len < 1 then exit("Passwords couldnt get collected")
+
+option = ""
+inputOk = false
+	while( not inputOk )
+		option = user_input("Select user: ").to_int
+		if typeof(option) != "number" or (option < 1 or option > users.len) then
+			print("Invalid input. Type a valid number")
+		else
+			inputOk = true
+		end if
+	end while
+
+print("<"+ users[option-1] +">")
+print(get_shell.launch(current_path + "/decipher", users[option-1]))
+
+
+end function
+
+getMails = function()
+shell = null
+pass = null
+passwords = []
+
+for mem in memory
+	address = metaxploit.scan_address(metaLib, mem).split("Unsafe check: ")
+
+	for add in address
+		if add == address[0] then continue
+		value = add[add.indexOf("<b>") + 3 : add.indexOf("</b>")]
+		value = value.replace("\n", "")
+		result = metaLib.overflow(mem, value)
+		print("mem: " + mem + "\n" + "value: " + value)
+		
+		if typeof(result) != "shell" and typeof(result) != "computer" then continue
+		if typeof(result) == "shell" then shell = result
+		if typeof(result) == "shell" then comp = result.host_computer
+		if typeof(result) == "computer" then comp = result
+
+		
+		
+		homeDir = comp.File("/home")
+    	if homeDir and homeDir.get_folders then 
+		userFolders = homeDir.get_folders()       
+        for userFolder in userFolders
+            mailFilePath = userFolder.path + "/Config/Mail.txt"
+            mailFile = comp.File(mailFilePath)
+			if not mailFile then continue
+			cont = mailFile.get_content
+			if not cont then continue
+
+			passwords.push(cont)
+		end for
+		end if
+	end for
+end for
+
+
+num = 1
+for obj in passwords
+	print(num + ": " + obj)
+	num = num + 1
+end for
+
+
+
+if passwords.len < 1 then exit("Emails couldnt get collected")
+
+option = ""
+inputOk = false
+	while( not inputOk )
+		option = user_input("Select user: ").to_int
+		if typeof(option) != "number" or (option < 1 or option > passwords.len) then
+			print("Invalid input. Type a valid number")
+		else
+			inputOk = true
+		end if
+	end while
+
+
+print("<"+ passwords[option-1] +">")
+print(get_shell.launch(current_path + "/decipher", passwords[option-1]))
+
+
+end function
+
+getAccsess = function()
+shell = null
+pass = null
+
+for mem in memory
+	address = metaxploit.scan_address(metaLib, mem).split("Unsafe check: ")
+
+	for add in address
+		
+		if add == address[0] then continue
+		value = add[add.indexOf("<b>") + 3 : add.indexOf("</b>")]
+		value = value.replace("\n", "")
+		result = metaLib.overflow(mem, value, "haha")
+		print("mem: " + mem + "\n" + "value: " + value)
+		
+		if typeof(result) != "shell" then continue
+		if typeof(result) == "shell" then shell = result
+		if shell then shell.start_terminal
+
+	end for
+end for
+
+
+
+end function
+
+print("\n 1: getPasswords \n 2: getMails \n 3: getAccsess \n")
+option = ""
+inputOk = false
+	while( not inputOk )
+		option = user_input("Select attack: ").to_int
+		if typeof(option) != "number" or (option < 1 or option > 3) then
+			print("Invalid input. Type a valid number")
+		else
+			inputOk = true
+		end if
+	end while
+
+if option == 1 then getPasswords()
+if option == 2 then getMails()
+if option == 3 then getAccsess()
