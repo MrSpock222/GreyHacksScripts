@@ -27,54 +27,80 @@ end if
 
 if ports == null then exit("nmap: ip address not found")
 if typeof(ports) == "string" then exit(ports)
-      
-info = "PORT STATE SERVICE VERSION LAN"   
-print("\nStarting nmap v1.1 at " + current_date)
-print("Interesting ports on " + params[0] + "\n")
-if(ports.len == 0) then exit("Scan finished. No open ports.")
 
-pr = []
-infoPr = []
-portIndex = 1
-for port in ports
-   service_info = router.port_info(port)
-   infoPr.push(service_info)
-   lan_ips = port.get_lan_ip
-   port_status = "open"
-
-   if(port.is_closed and not isLanIp) then
-      port_status = "closed"
-   end if
-   info = info + "\n" + portIndex + " " + port.port_number + " " + port_status + " " + service_info + " " + lan_ips
-   pr.push(port.port_number)
-   portIndex = portIndex + 1
-end for
-print("INDEX " + format_columns(info) + "\n")
-
+print("\n Select: \n 1: Ports \n 2: Router \n")
 option = ""
 inputOk = false
 	while( not inputOk )
-		option = user_input("Select index: ").to_int
-		if typeof(option) != "number" or (option < 1 or option > pr.len) then
+		option = user_input("Select attack: ").to_int
+		if typeof(option) != "number" or (option < 1 or option > 2) then
 			print("Invalid input. Type a valid number")
 		else
 			inputOk = true
 		end if
 	end while
 
+	service_info = null
 
-port = pr[option - 1]
-net_session = metaxploit.net_use(address, port)
+if option == 2 then
+	net_session = metaxploit.net_use( address )
+	if not net_session then exit("Error: can't connect to net session")
+	service_info = "Kernel " + get_router.kernel_version
+end if
 
-if not net_session then
-	exit("Error: can't connect to net session")
+if option == 1 then
+      
+	info = "PORT STATE SERVICE VERSION LAN"   
+	print("\nStarting test v1.1 at " + current_date)
+	print("Interesting ports on " + params[0] + "\n")
+	if(ports.len == 0) then exit("Scan finished. No open ports.")
+
+	pr = []
+	infoPr = []
+	portIndex = 1
+	for port in ports
+	service_info = router.port_info(port)
+	infoPr.push(service_info)
+	lan_ips = port.get_lan_ip
+	port_status = "open"
+
+	if(port.is_closed and not isLanIp) then
+		port_status = "closed"
+	end if
+	info = info + "\n" + portIndex + " " + port.port_number + " " + port_status + " " + service_info + " " + lan_ips
+	pr.push(port.port_number)
+	portIndex = portIndex + 1
+	end for
+	print("INDEX " + format_columns(info) + "\n")
+
+	option = ""
+	inputOk = false
+		while( not inputOk )
+			option = user_input("Select index: ").to_int
+			if typeof(option) != "number" or (option < 1 or option > pr.len) then
+				print("Invalid input. Type a valid number")
+			else
+				inputOk = true
+			end if
+		end while
+
+
+	port = pr[option - 1]
+	net_session = metaxploit.net_use(address, port)
+
+	if not net_session then
+		exit("Error: can't connect to net session")
+	end if
+
+	service_info = infoPr[option - 1]
 end if
 
 metaLib = net_session.dump_lib
 
+//COM FOR TESTING
 
-service_info = infoPr[option - 1]
-if service_info.split(" ")[0] == "students" or service_info.split(" ")[0] == "employees" then 
+
+if service_info.split(" ")[0] == "students" or service_info.split(" ")[0] == "employees" or service_info.split(" ")[0] == "criminals" then 
 	typeOfCode = "ssh " + service_info.split(" ")[1]
 else 
 	typeOfCode = service_info
@@ -82,7 +108,11 @@ end if
 
 memory = null
 
-codeCont = get_shell.host_computer.File(current_path + "/codes.txt").get_content.split(":")
+filePath = current_path + "/codes.txt"
+codesFile = get_shell.host_computer.File(filePath)
+
+if codesFile == null then exit("codes.txt doesnt exist at path:\n " + filePath)
+codeCont = codesFile.get_content.split(":")
 
 for line in codeCont
 	if line == "" then break
@@ -90,7 +120,6 @@ for line in codeCont
 	if le[0] + " " + le[1] != typeOfCode then continue
 	memory = line[line.indexOf("[") : line.indexOf(":")]
 	memory = memory.split("""")
-	print(memory[0])
 	break
 end for
 
@@ -100,6 +129,7 @@ if memory == null then
 	get_shell.host_computer.File(current_path + "/codes.txt").set_content(get_shell.host_computer.File(current_path + "/codes.txt").get_content + typeOfCode + toWriteMem + ":")
 end if
 
+//COM FOR TESTING
 
 getPasswords = function()
 shell = null
@@ -133,13 +163,26 @@ end for
 
 num = 1
 users = []
+testBool = false
 for obj in passwords
 	for i in obj
-		if i then
+		for user in users
+			if user == i then testBool = true
+		end for
+
+		if testBool then
+			testBool = false
+			continue
+		end if
+
+		// if i.split(":")[0] == "root" then
+		// 	print("Password of root is: ")
+		// 	exit(get_shell.launch(current_path + "/decipher", i))
+		// end if
+
 		users.push(i)
 		print("\n" + num + ": " + i)
 		num = num + 1
-		end if
 	end for
 end for
 
