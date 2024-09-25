@@ -292,7 +292,7 @@ inputOk = false
 print("<"+ passwords[option-1] +">")
 dec = File(get_shell.host_computer, current_path + "/decipher")
 if not dec then scp(serverShell, decipherPath, current_path, get_shell)
-print(get_shell.launch("/decipher", passwords[option-1]))
+print(get_shell.launch(current_path + "/decipher", passwords[option-1]))
 
 
 end function
