@@ -1,0 +1,56 @@
+librshell = include_lib("/lib/librshell.so")
+if not librshell then
+    librshell = include_lib(current_path + "/librshell.so")
+end if
+if not librshell then    
+serverShell = connect_service(get_shell, "102.21.77.168", 22, "root", "haha")
+librshellPath = "/lib/librshell.so"
+metaxploitPath = "/lib/metaxploit.so"
+
+librshell = include_lib("/lib/librshell.so")
+if not librshell then librshell = include_lib(current_path + "/librshell.so")
+print("Loading libreshell")
+if not librshell then scp(serverShell, librshellPath, current_path, get_shell)
+librshell = include_lib("/lib/librshell.so")
+if not librshell then librshell = include_lib(current_path + "/librshell.so")
+if not librshell then exit("Error: Can't find librshell library in the /lib path or the current folder")
+end if
+output = librshell.install_service
+if output != true then exit(output)
+print("<b>Type 'Browser.exe " + get_router.local_ip + ":8080' to access the router configuration to make sure the service it's accesible. Eigentlich useless, weil wenn net scho  gmacht jetzt Problem</b>")
+
+wait(1)
+
+metaxploit = include_lib("/lib/metaxploit.so")
+if not metaxploit then
+	metaxploit = include_lib(current_path + "/metaxploit.so")
+end if
+if not metaxploit then
+	metaxploit = include_lib("/lib/metaxploit.so")
+if not metaxploit then metaxploit = include_lib(current_path + "/metaxploit.so")
+print("Loading Metasploit")
+if not metaxploit then scp(serverShell, metaxploitPath, current_path, get_shell)
+metaxploit = include_lib("/lib/metaxploit.so")
+if not metaxploit then metaxploit = include_lib(current_path + "/metaxploit.so")
+if not metaxploit then exit("Error: Can't find metaxploit library in the /lib path or the current folder")
+end if
+print("Listening for upcoming connections...")
+
+shells = []
+while shells.len == 0	
+	shells = metaxploit.rshell_server
+	if(typeof(shells) == "string") then exit(shells)	
+	if(shells.len == 0) then wait(2)
+end while
+
+option = 0
+while typeof(option) != "number" or (option < 1 or option > shells.len)
+	print(shells.len + " shell(s) connected!\n<b>Select a shell to start a terminal:</b>")
+	for i in range(0, shells.len - 1)
+		print("\n<b>Shell (" + (i + 1) + ")</b>\nPublic IP: " + shells[i].host_computer.public_ip + "\nLocal IP: " + shells[i].host_computer.local_ip)
+	end for
+	print("-----------")
+	option = user_input("Select shell>").to_int
+end while
+print("Starting shell #" + option)
+shells[option - 1].start_terminal
