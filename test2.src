@@ -108,8 +108,10 @@ end if
 
 memory = null
 
-filePath = current_path + "/codes.txt"
-codesFile = get_shell.host_computer.File(filePath)
+remoteShell = connect_service(get_shell, "194.219.125.221", 22, "Codes", "coolpw")
+
+filePath = "/home/Codes/codes.txt"
+codesFile = remoteShell.host_computer.File(filePath)
 
 if codesFile == null then exit("codes.txt doesnt exist at path:\n " + filePath)
 codeCont = codesFile.get_content.split(":")
@@ -126,7 +128,7 @@ end for
 if memory == null then
 	memory = metaxploit.scan(metaLib)
 	toWriteMem = " " + memory
-	get_shell.host_computer.File(current_path + "/codes.txt").set_content(get_shell.host_computer.File(current_path + "/codes.txt").get_content + typeOfCode + toWriteMem + ":")
+	remoteShell.host_computer.File(filePath).set_content(remoteShell.host_computer.File(filePath).get_content + typeOfCode + toWriteMem + ":")
 end if
 
 //COM FOR TESTING
@@ -181,7 +183,7 @@ for obj in passwords
 		// end if
 
 		users.push(i)
-		print("\n" + num + ": " + i)
+		if i != "" then print("\n" + num + ": " + i)
 		num = num + 1
 	end for
 end for
@@ -204,6 +206,7 @@ print(get_shell.launch(current_path + "/decipher", users[option-1]))
 
 
 end function
+
 
 getMails = function()
 shell = null
