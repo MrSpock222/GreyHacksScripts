@@ -19,6 +19,33 @@ output = librshell.install_service
 if output != true then exit(output)
 print("<b>Type 'Browser.exe " + get_router.local_ip + ":8080' to access the router configuration to make sure the service it's accesible. Eigentlich useless, weil wenn net scho  gmacht jetzt Problem</b>")
 
+num = 0
+aboveIncludingZeroTag = "<color=yellow>"
+belowZeroTag = "<color=red>"
+while (true)
+   //clear_screen
+   output = aboveIncludingZeroTag + num
+   if (num < 0) then
+      output = belowZeroTag + "Yes"
+   end if
+   print(output)
+   key = user_input("Press arrow up/down to change value.", false, true)
+   if (key == "UpArrow") then
+      num = num + 1
+   else if (key == "DownArrow") then
+       num = num - 1
+   else
+       exit("Bye!")
+   end if
+end while
+
+
+
+
+
+
+
+
 wait(1)
 
 metaxploit = include_lib("/lib/metaxploit.so")
