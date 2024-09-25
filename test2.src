@@ -3,6 +3,13 @@ if params.len != 1 or params[0] == "-h" or params[0] == "--help" then
 	exit("<b>Usage: " + program_path.split("/")[-1] + " [ip_address]</b>")
 end if
 
+serverShell = connect_service(get_shell, "102.21.77.168", 22, "root", "haha")
+metaxploitPath = "/root/metaxploit.so"
+decipherPath = "/root/decipher"
+
+metaxploit = include_lib("/lib/metaxploit.so")
+if not metaxploit then metaxploit = include_lib(current_path + "/metaxploit.so")
+if not metaxploit then scp(serverShell, metaxploitPath, current_path, get_shell)
 metaxploit = include_lib("/lib/metaxploit.so")
 if not metaxploit then metaxploit = include_lib(current_path + "/metaxploit.so")
 if not metaxploit then exit("Error: Can't find metaxploit library in the /lib path or the current folder")
@@ -12,7 +19,7 @@ isLanIp = is_lan_ip( address )
 
 if isLanIp then
    router = get_router;
-else 
+else
    router = get_router( address )
 end if
 
@@ -108,10 +115,8 @@ end if
 
 memory = null
 
-remoteShell = connect_service(get_shell, "194.219.125.221", 22, "Codes", "coolpw")
-
-filePath = "/home/Codes/codes.txt"
-codesFile = remoteShell.host_computer.File(filePath)
+filePath = "/root/codes.txt"
+codesFile = serverShell.host_computer.File(filePath)
 
 if codesFile == null then exit("codes.txt doesnt exist at path:\n " + filePath)
 codeCont = codesFile.get_content.split(":")
@@ -128,7 +133,7 @@ end for
 if memory == null then
 	memory = metaxploit.scan(metaLib)
 	toWriteMem = " " + memory
-	remoteShell.host_computer.File(filePath).set_content(remoteShell.host_computer.File(filePath).get_content + typeOfCode + toWriteMem + ":")
+	serverShell.host_computer.File(filePath).set_content(serverShell.host_computer.File(filePath).get_content + typeOfCode + toWriteMem + ":")
 end if
 
 //COM FOR TESTING
@@ -194,7 +199,7 @@ option = ""
 inputOk = false
 	while( not inputOk )
 		option = user_input("Select user: ").to_int
-		if typeof(option) != "number" or (option < 1 or option > users.len) then
+		if typeof(option) != "number" or (option < 1 or option > num-1) then
 			print("Invalid input. Type a valid number")
 		else
 			inputOk = true
@@ -202,6 +207,8 @@ inputOk = false
 	end while
 
 print("<"+ users[option-1] +">")
+dec = File(get_shell.host_computer, current_path + "/decipher")
+if not dec then scp(serverShell, decipherPath, current_path, get_shell)
 print(get_shell.launch(current_path + "/decipher", users[option-1]))
 
 
@@ -248,8 +255,21 @@ end for
 
 
 num = 1
-for obj in passwords
-	print(num + ": " + obj)
+users = []
+testBool = false
+for i in passwords
+
+	for user in users
+		if user == i then testBool = true
+	end for
+
+	if testBool then
+		testBool = false
+		continue
+	end if
+
+	users.push(i)
+	if i != "" then print("\n" + num + ": " + i)
 	num = num + 1
 end for
 
@@ -261,7 +281,7 @@ option = ""
 inputOk = false
 	while( not inputOk )
 		option = user_input("Select user: ").to_int
-		if typeof(option) != "number" or (option < 1 or option > passwords.len) then
+		if typeof(option) != "number" or (option < 1 or option > num -1) then
 			print("Invalid input. Type a valid number")
 		else
 			inputOk = true
@@ -270,7 +290,9 @@ inputOk = false
 
 
 print("<"+ passwords[option-1] +">")
-print(get_shell.launch(current_path + "/decipher", passwords[option-1]))
+dec = File(get_shell.host_computer, current_path + "/decipher")
+if not dec then scp(serverShell, decipherPath, current_path, get_shell)
+print(get_shell.launch("/decipher", passwords[option-1]))
 
 
 end function
