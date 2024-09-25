@@ -1,10 +1,14 @@
-//command: decipher
+// command: decipher
+serverShell = connect_service(get_shell, "102.21.77.168", 22, "root", "haha")
+cryptotoolsPath = "/root/crypto.so"
 cryptools = include_lib("/lib/crypto.so")
 if not cryptools then cryptools = include_lib(current_path + "/crypto.so")
+if not cryptools then scp(serverShell, cryptotoolsPath, current_path, get_shell)
+cryptools = include_lib(current_path + "/crypto.so")
 if not cryptools then exit("Error: Missing crypto library")
 
 GetPassword = function(userPass)
-	if userPass.len != 2 then return("decipher: wrong syntax")
+	if userPass.len != 2 then return ("decipher: wrong syntax")
 	password = cryptools.decipher(userPass[1])
 	return password
 end function
@@ -19,15 +23,14 @@ if file then
 	if file.get_content.len == 0 then exit("decipher: no users found")
 	lines = file.get_content.split("\n")
 else if origFile.len > 33 then
-	lines = [origFile]
+	lines = [ origFile ]
 else
-	exit("decipher: can't find " + origFile)
+	exit "decipher: can't find " + origFile
 end if
 
-for line in lines 
+for line in lines
 	userPass = line.split(":")
-	password = GetPassword(userPass)		
+	password = GetPassword(userPass)
 	if not password then print("Can't find password :(")
 	if password then print(password)
 end for
-	
