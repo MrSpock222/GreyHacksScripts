@@ -20,12 +20,12 @@ choseSmth = function(listOfVariables = ["option 1"], descriptionText = "No descr
 	while (true)
 		clear_screen
 		print (descriptionText)
-		isActive = "<color=#0048FF>"
-		isNotActive = "<color=#373333>"
+		isActive = "<mark=#434343>"
 		counter = 0
+
 		for variables in listOfVariables
 			if counter == num then print(isActive + variables)
-			if counter != num then print(isNotActive + variables)
+			if counter != num then print(variables)
 			counter = counter + 1
 		end for
 
@@ -117,34 +117,34 @@ metaLib = net_session.dump_lib
 //COM FOR TESTING
 
 
-// if service_info.split(" ")[0] == "students" or service_info.split(" ")[0] == "employees" or service_info.split(" ")[0] == "criminals" then 
-// 	typeOfCode = "ssh " + service_info.split(" ")[1]
-// else 
-// 	typeOfCode = service_info
-// end if
+if service_info.split(" ")[0] == "students" or service_info.split(" ")[0] == "employees" or service_info.split(" ")[0] == "criminals" then 
+	typeOfCode = "ssh " + service_info.split(" ")[1]
+else 
+	typeOfCode = service_info
+end if
 
-// memory = null
+memory = null
 
-// filePath = "/root/codes.txt"
-// codesFile = serverShell.host_computer.File(filePath)
+filePath = "/root/codes.txt"
+codesFile = serverShell.host_computer.File(filePath)
 
-// if codesFile == null then exit("codes.txt doesnt exist at path:\n " + filePath)
-// codeCont = codesFile.get_content.split(":")
+if codesFile == null then exit("codes.txt doesnt exist at path:\n " + filePath)
+codeCont = codesFile.get_content.split(":")
 
-// for line in codeCont
-// 	if line == "" then break
-// 	le = line.split(" ")
-// 	if le[0] + " " + le[1] != typeOfCode then continue
-// 	memory = line[line.indexOf("[") : line.indexOf(":")]
-// 	memory = memory.split("""")
-// 	break
-// end for
+for line in codeCont
+	if line == "" then break
+	le = line.split(" ")
+	if le[0] + " " + le[1] != typeOfCode then continue
+	memory = line[line.indexOf("[") : line.indexOf(":")]
+	memory = memory.split("""")
+	break
+end for
 
-// if memory == null then
+if memory == null then
 	memory = metaxploit.scan(metaLib)
-// 	toWriteMem = " " + memory
-// 	serverShell.host_computer.File(filePath).set_content(serverShell.host_computer.File(filePath).get_content + typeOfCode + toWriteMem + ":")
-// end if
+	toWriteMem = " " + memory
+	serverShell.host_computer.File(filePath).set_content(serverShell.host_computer.File(filePath).get_content + typeOfCode + toWriteMem + ":")
+end if
 
 //COM FOR TESTING
 
