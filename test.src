@@ -20,7 +20,7 @@ choseSmth = function(listOfVariables = ["option 1"], descriptionText = "No descr
 	while (true)
 		clear_screen
 		print (descriptionText)
-		isActive = "<mark=#434343>"
+		isActive = "<mark=#D1D1D143>"
 		counter = 0
 
 		for variables in listOfVariables
