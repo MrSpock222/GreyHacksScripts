@@ -1,9 +1,9 @@
+
 librshell = include_lib("/lib/librshell.so")
 if not librshell then
     librshell = include_lib(current_path + "/librshell.so")
 end if
-if not librshell then    
-serverShell = connect_service(get_shell, "102.21.77.168", 22, "root", "haha")
+serverShell = connect_service(get_shell, "102.21.77.168", 22, "root", "haha")    
 librshellPath = "/lib/librshell.so"
 metaxploitPath = "/lib/metaxploit.so"
 
