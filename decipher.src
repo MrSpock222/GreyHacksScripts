@@ -32,5 +32,5 @@ for line in lines
 	userPass = line.split(":")
 	password = GetPassword(userPass)
 	if not password then print("Can't find password :(")
-	if password then print(password)
+	if password then print("Password: " + "<color=red>" + password)
 end for
