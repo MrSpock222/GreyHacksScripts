@@ -125,13 +125,22 @@ end if
 
 metaLib = net_session.dump_lib
 
-//COM FOR TESTING
+
 
 
 typeOfCode = service_info
 
 
 memory = null
+
+path = "/root"
+hostComputer = get_shell.host_computer
+createResult = hostComputer.touch(path, "codes.txt")
+if typeof(createResult) == "string" then
+   print(createResult + " Happy")
+else
+   print("File got created at given path " + path)
+end if
 
 filePath = "/root/codes.txt"
 if not useServer then
@@ -140,7 +149,8 @@ else
 	codesFile = serverShell.host_computer.File(filePath)
 end if
 
-if codesFile == null then exit("codes.txt doesnt exist at path:\n " + filePath)
+if codesFile == null then print("codes.txt doesnt exist at path:\n " + filePath)
+
 codeCont = codesFile.get_content.split(":")
 
 for line in codeCont
