@@ -3,15 +3,16 @@ if params.len != 1 or params[0] == "-h" or params[0] == "--help" then
 	exit("<b>Usage: " + program_path.split("/")[-1] + " [ip_address]</b>")
 end if
 
-serverShell = connect_service(get_shell, "102.21.77.168", 22, "root", "haha")
-metaxploitPath = "/root/metaxploit.so"
-decipherPath = "/root/decipher"
+useServer = false;
+customObj = get_custom_object()
+
+serverShell = connect_service(get_shell, "154.120.254.117", 22, "root", "haha")
+metaxploitPath = parent_path(launch_path) + "/metaxploit.so"
+decipherPath = parent_path(launch_path) + "/decipher"
 
 metaxploit = include_lib("/lib/metaxploit.so")
-if not metaxploit then metaxploit = include_lib(current_path + "/metaxploit.so")
-if not metaxploit then scp(serverShell, metaxploitPath, current_path, get_shell)
-metaxploit = include_lib("/lib/metaxploit.so")
-if not metaxploit then metaxploit = include_lib(current_path + "/metaxploit.so")
+if not metaxploit then metaxploit = include_lib(parent_path(launch_path) + "/metaxploit.so")
+if not metaxploit and useserver then scp(serverShell, metaxploitPath, current_path, get_shell)
 if not metaxploit then exit("Error: Can't find metaxploit library in the /lib path or the current folder")
 
 choseSmth = function(listOfVariables = ["option 1"], descriptionText = "No description set", removeInt = 0)
@@ -31,10 +32,10 @@ choseSmth = function(listOfVariables = ["option 1"], descriptionText = "No descr
 
 		key = user_input("Press Up or Down arrow Key", false, true)
 
-		if (key == "DownArrow") then 
+		if (key == "DownArrow") or (key == "s") then 
 			num = num + 1
 			if num > listOfVariables.len - 1 then num = 0
-		else if (key == "UpArrow") then 
+		else if (key == "UpArrow") or (key == "w") then 
 			num = num - 1
 			if num < 0 then num = listOfVariables.len - 1
 		else
@@ -117,16 +118,17 @@ metaLib = net_session.dump_lib
 //COM FOR TESTING
 
 
-if service_info.split(" ")[0] == "students" or service_info.split(" ")[0] == "employees" or service_info.split(" ")[0] == "criminals" then 
-	typeOfCode = "ssh " + service_info.split(" ")[1]
-else 
-	typeOfCode = service_info
-end if
+typeOfCode = service_info
+
 
 memory = null
 
 filePath = "/root/codes.txt"
-codesFile = serverShell.host_computer.File(filePath)
+if not useServer then
+	codesFile = get_shell.host_computer.File(filePath)
+else
+	codesFile = serverShell.host_computer.File(filePath)
+end if
 
 if codesFile == null then exit("codes.txt doesnt exist at path:\n " + filePath)
 codeCont = codesFile.get_content.split(":")
@@ -143,12 +145,18 @@ end for
 if memory == null then
 	memory = metaxploit.scan(metaLib)
 	toWriteMem = " " + memory
-	serverShell.host_computer.File(filePath).set_content(serverShell.host_computer.File(filePath).get_content + typeOfCode + toWriteMem + ":")
+
+	if not useServer then
+		get_shell.host_computer.File(filePath).set_content(get_shell.host_computer.File(filePath).get_content + typeOfCode + toWriteMem + ":")
+	else
+		serverShell.host_computer.File(filePath).set_content(serverShell.host_computer.File(filePath).get_content + typeOfCode + toWriteMem + ":")
+	end if
+
 end if
 
 //COM FOR TESTING
 
-getPasswords = function()
+getPasswords = function(getRoot = false)
 shell = null
 pass = null
 passwords = []
@@ -160,8 +168,8 @@ for mem in memory
 		if add == address[0] then continue
 		value = add[add.indexOf("<b>") + 3 : add.indexOf("</b>")]
 		value = value.replace("\n", "")
-		result = metaLib.overflow(mem, value)
-		
+		result = metaLib.overflow(mem, value, "haha")
+
 		if typeof(result) != "shell" and typeof(result) != "computer" then continue
 		if typeof(result) == "shell" then shell = result
 		if typeof(result) == "shell" then comp = result.host_computer
@@ -206,15 +214,22 @@ end for
 
 if users.len < 1 then exit("Passwords couldnt get collected")
 
-
-option = choseSmth(output, "Select a user: ") //Selecting
+if getRoot then 
+	option = 0
+else
+	option = choseSmth(output, "Select a user: ") //Selecting
+end if
 
 print("\nUser: " + users[option].split(":")[0])
 dec = File(get_shell.host_computer, current_path + "/decipher")
-if not dec then scp(serverShell, decipherPath, current_path, get_shell)
-get_shell.launch(current_path + "/decipher", users[option])
-
-
+if not dec then 
+	if useServer then 
+		scp(serverShell, decipherPath, current_path, get_shell)
+	else
+		scp(get_shell, decipherPath, current_path, get_shell)
+	end if	
+end if
+if get_shell.launch(current_path + "/decipher", users[option]) != 1 then print("No decipher found in path: " + current_path + "/decipher")
 end function
 
 
@@ -230,7 +245,7 @@ for mem in memory
 		if add == address[0] then continue
 		value = add[add.indexOf("<b>") + 3 : add.indexOf("</b>")]
 		value = value.replace("\n", "")
-		result = metaLib.overflow(mem, value)
+		result = metaLib.overflow(mem, value, "haha")
 		
 		if typeof(result) != "shell" and typeof(result) != "computer" then continue
 		if typeof(result) == "shell" then shell = result
@@ -285,8 +300,15 @@ option = choseSmth(output, "Select a user: ") //Selecting
 
 print("\nUser: " + users[option].split(":")[0])
 dec = File(get_shell.host_computer, current_path + "/decipher")
-if not dec then scp(serverShell, decipherPath, current_path, get_shell)
-get_shell.launch(current_path + "/decipher", passwords[option])
+if not dec then 
+	if useServer then 
+		scp(serverShell, decipherPath, current_path, get_shell)
+	else
+		scp(get_shell, decipherPath, current_path, get_shell)
+	end if
+end if
+
+if get_shell.launch(current_path + "/decipher", passwords[option]) != 1 then print("No decipher found in path: " + current_path + "/decipher")
 
 
 end function
@@ -307,18 +329,22 @@ for mem in memory
 		
 		if typeof(result) != "shell" then continue
 		if typeof(result) == "shell" then shell = result
-		if shell then shell.start_terminal
+		if shell then 
+			if shell.launch("/bin/whoami") != "root" then
+				option = choseSmth(["1: Yes", "2: No"], "Do you want the root passwd?")
+				if option == 0 then getPasswords(true)
+			end if
+			shell.start_terminal
+		end if
 
 	end for
 end for
-
-
 
 end function
 
 
 option = choseSmth(["1: getPasswords", "2: getMails" ,"3: getAccsess"], "Choose a Option:")
 
-if option == 0 then getPasswords()
+if option == 0 then getPasswords(false)
 if option == 1 then getMails()
 if option == 2 then getAccsess()
