@@ -2,6 +2,14 @@
 if params.len != 1 or params[0] == "-h" or params[0] == "--help" then
 	exit("<b>Usage: " + program_path.split("/")[-1] + " [ip_address]</b>")
 end if
+print("TEST")
+print("TEST")
+print("TEST")
+print("TEST")
+print("TEST")
+print("TEST")
+print("TEST")
+print("TEST")
 
 useServer = true;
 customObj = get_custom_object()
