@@ -3,16 +3,18 @@ if params.len != 1 or params[0] == "-h" or params[0] == "--help" then
 	exit("<b>Usage: " + program_path.split("/")[-1] + " [ip_address]</b>")
 end if
 
-useServer = false;
+useServer = true;
 customObj = get_custom_object()
 
-serverShell = connect_service(get_shell, "154.120.254.117", 22, "root", "haha")
-metaxploitPath = parent_path(launch_path) + "/metaxploit.so"
-decipherPath = parent_path(launch_path) + "/decipher"
+serverShell = get_shell.connect_service("128.160.180.228", 22, "root", "noah666", "ssh")
+if useServer and typeof(serverShell) != "shell" then exit("useServer is True but no shell obtained!")
+metaxploitPath = "/root/metaxploit.so"
+decipherPath = "/root/decipher"
 
 metaxploit = include_lib("/lib/metaxploit.so")
 if not metaxploit then metaxploit = include_lib(parent_path(launch_path) + "/metaxploit.so")
-if not metaxploit and useserver then scp(serverShell, metaxploitPath, current_path, get_shell)
+if not metaxploit and useServer then scp(serverShell, metaxploitPath, current_path, get_shell)
+metaxploit = include_lib(current_path + "/metaxploit.so")
 if not metaxploit then exit("Error: Can't find metaxploit library in the /lib path or the current folder")
 
 choseSmth = function(listOfVariables = ["option 1"], descriptionText = "No description set", removeInt = 0)
@@ -212,7 +214,7 @@ for obj in passwords
 	end for
 end for
 
-if users.len < 1 then exit("Passwords couldnt get collected")
+if users.len < 1 then return("Passwords couldnt get collected")
 
 if getRoot then 
 	option = 0
@@ -331,7 +333,7 @@ for mem in memory
 		if typeof(result) == "shell" then shell = result
 		if shell then 
 			if shell.launch("/bin/whoami") != "root" then
-				option = choseSmth(["1: Yes", "2: No"], "Do you want the root passwd?")
+				option = choseSmth(["1: Yes", "2: No"], "Do you want to try get the root passwd?")
 				if option == 0 then getPasswords(true)
 			end if
 			shell.start_terminal
