@@ -16,7 +16,15 @@ aptClient.update()
 
 codesPath = "/root/codes.txt"
 
-if params[0] == "getLan" then exit(aptClient.install("ScanLan.exe", current_path) + ": installation of ScanLan.exe was succsessful!")	
+if params[0] == "getLan" then
+	result = aptClient.install("ScanLan.exe", current_path)
+	if result == 1 then 
+		print("Installation of ScanLan.exe was succsessful!")
+		exit(get_shell.launch(current_path + "/ScanLan.exe"))
+	else
+		exit("Installation of ScanLan.exe failed!")
+	end if
+end if
 
 
 serverShell = get_shell.connect_service(repoIP, 22, "root", "noah666", "ssh")
@@ -35,6 +43,7 @@ getMemCodes = function(typeOfCode, net_session)
 	metaLib = net_session.dump_lib
 	memory = null
 
+if serverShell then
 	if serverShell.host_computer.File(codesPath) == null then 
 		hostComputer = serverShell.host_computer
 		createResult = hostComputer.touch(path, codesPath.split("/")[-1])
@@ -44,6 +53,17 @@ getMemCodes = function(typeOfCode, net_session)
 		print("File got created at given path " + path)
 		end if
 	end if
+else
+	if get_shell.host_computer.File(codesPath) == null then 
+		hostComputer = get_shell.host_computer
+		createResult = hostComputer.touch(path, codesPath.split("/")[-1])
+		if typeof(createResult) == "string" then
+		print(createResult + " Happy")
+		else
+		print("File got created at given path " + path)
+		end if
+	end if
+end if
 
 	if not useApt then codesFile = get_shell.host_computer.File(codesPath)
 	if useApt then codesFile = serverShell.host_computer.File(codesPath)
