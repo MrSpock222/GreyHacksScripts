@@ -16,6 +16,9 @@ aptClient.update()
 
 codesPath = "/root/codes.txt"
 
+if params[0] == "getLan" then exit(aptClient.install("ScanLan.exe", current_path) + ": installation of ScanLan.exe was succsessful!")	
+
+
 serverShell = get_shell.connect_service(repoIP, 22, "root", "noah666", "ssh")
 if typeof(serverShell) != "shell" and useApt then exit("useApt is True but shell couldnt be obtained!")
 
