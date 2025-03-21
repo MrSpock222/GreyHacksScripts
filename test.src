@@ -98,13 +98,18 @@ choseSmth = function(listOfVariables = ["option 1"], descriptionText = "No descr
 	infoPrefix = "<color=#FF0000df>"
 	num = 0
 	if removeInt > 0 then listOfVariables.remove(removeInt - 1)
-	while (true)
-		clear_screen
+
+	while (true)	
 		if not isForChoosing then 
-			print (infoPrefix + descriptionText)
-			return wait(2)
-		end if
-		if isForChoosing then print (descriptionText)
+			suffix = "\n<b>Press any button to continue</b>" + "<mark=#FFFFFFa>"
+			print("<b>\n---------------------------------------\n</b>")
+			print (infoPrefix + descriptionText + suffix)
+			if user_input() then return
+		else
+			clear_screen
+			print (descriptionText)
+		end if 
+
 		counter = 0
 
 		for variables in listOfVariables
@@ -122,6 +127,7 @@ choseSmth = function(listOfVariables = ["option 1"], descriptionText = "No descr
 			num = num - 1
 			if num < 0 then num = listOfVariables.len - 1
 		else
+			clear_screen()
 			print("\nYou chose: " + (num + 1))
 			return num
 		end if
@@ -257,7 +263,7 @@ if users.len < 1 and not getRoot then
 
 	if optionPortsOrRouter == 1 then optionForRouter()
 	if optionPortsOrRouter == 0 then optionForPorts()
-else 
+else if getRoot then
 	clear_screen()
 	print("Root password couldnt get collected")
 	return
