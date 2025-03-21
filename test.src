@@ -20,7 +20,7 @@ if params[0] == "getLan" then
 	result = aptClient.install("ScanLan.exe", current_path)
 	if result == 1 then 
 		print("Installation of ScanLan.exe was succsessful!")
-		exit(get_shell.launch(current_path + "/ScanLan.exe"))
+		get_shell.launch(current_path + "/ScanLan.exe")
 	else
 		exit("Installation of ScanLan.exe failed!")
 	end if
@@ -43,7 +43,7 @@ getMemCodes = function(typeOfCode, net_session)
 	metaLib = net_session.dump_lib
 	memory = null
 
-if serverShell then
+if typeof(serverShell) == "shell" then
 	if serverShell.host_computer.File(codesPath) == null then 
 		hostComputer = serverShell.host_computer
 		createResult = hostComputer.touch(path, codesPath.split("/")[-1])
