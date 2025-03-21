@@ -3,17 +3,30 @@ if params.len != 1 or params[0] == "-h" or params[0] == "--help" then
 	exit("<b>Usage: " + program_path.split("/")[-1] + " [ip_address]</b>")
 end if
 
-useServer = true;
+useApt = true;
 customObj = get_custom_object()
 
-serverShell = get_shell.connect_service("128.160.180.228", 22, "root", "noah666", "ssh")
-if useServer and typeof(serverShell) != "shell" then exit("useServer is True but no shell obtained!")
+aptClient = include_lib("/lib/aptclient.so")
+if not aptClient then aptClient = include_lib(current_path + "/aptclient.so")
+if not aptClient then exit("There is no aptclient.so at " + current_path + " or /lib!")
+
+repoIP = "128.160.180.228"
+aptClient.add_repo(repoIP)
+aptClient.update()
+
+serverShell = get_shell.connect_service(repoIP, 22, "root", "noah666", "ssh")
+if typeof(serverShell) != "shell" and useApt then exit("useApt is True but shell couldnt be obtained!")
+
 metaxploitPath = "/root/metaxploit.so"
 decipherPath = "/root/decipher"
 
+
+dec = File(get_shell.host_computer, current_path + "/decipher")
+if useApt and not dec then aptClient.install("decipher", current_path)
+
 metaxploit = include_lib("/lib/metaxploit.so")
 if not metaxploit then metaxploit = include_lib(parent_path(launch_path) + "/metaxploit.so")
-if not metaxploit and useServer then scp(serverShell, metaxploitPath, current_path, get_shell)
+if not metaxploit and useApt then aptClient.install("metaxploit.so", current_path)
 metaxploit = include_lib(current_path + "/metaxploit.so")
 if not metaxploit then exit("Error: Can't find metaxploit library in the /lib path or the current folder")
 
@@ -126,7 +139,7 @@ typeOfCode = service_info
 memory = null
 
 path = "/root"
-hostComputer = get_shell.host_computer
+hostComputer = serverShell.host_computer
 createResult = hostComputer.touch(path, "codes.txt")
 if typeof(createResult) == "string" then
    print(createResult + " Happy")
@@ -135,7 +148,7 @@ else
 end if
 
 filePath = "/root/codes.txt"
-if not useServer then
+if not useApt then
 	codesFile = get_shell.host_computer.File(filePath)
 else
 	codesFile = serverShell.host_computer.File(filePath)
@@ -158,7 +171,7 @@ if memory == null then
 	memory = metaxploit.scan(metaLib)
 	toWriteMem = " " + memory
 
-	if not useServer then
+	if not useApt then
 		get_shell.host_computer.File(filePath).set_content(get_shell.host_computer.File(filePath).get_content + typeOfCode + toWriteMem + ":")
 	else
 		serverShell.host_computer.File(filePath).set_content(serverShell.host_computer.File(filePath).get_content + typeOfCode + toWriteMem + ":")
@@ -233,14 +246,6 @@ else
 end if
 
 print("\nUser: " + users[option].split(":")[0])
-dec = File(get_shell.host_computer, current_path + "/decipher")
-if not dec then 
-	if useServer then 
-		scp(serverShell, decipherPath, current_path, get_shell)
-	else
-		scp(get_shell, decipherPath, current_path, get_shell)
-	end if	
-end if
 if get_shell.launch(current_path + "/decipher", users[option]) != 1 then print("No decipher found in path: " + current_path + "/decipher")
 end function
 
@@ -311,15 +316,6 @@ option = choseSmth(output, "Select a user: ") //Selecting
 
 
 print("\nUser: " + users[option].split(":")[0])
-dec = File(get_shell.host_computer, current_path + "/decipher")
-if not dec then 
-	if useServer then 
-		scp(serverShell, decipherPath, current_path, get_shell)
-	else
-		scp(get_shell, decipherPath, current_path, get_shell)
-	end if
-end if
-
 if get_shell.launch(current_path + "/decipher", passwords[option]) != 1 then print("No decipher found in path: " + current_path + "/decipher")
 
 
