@@ -14,7 +14,8 @@ repoIP = "128.160.180.228"
 aptClient.add_repo(repoIP)
 aptClient.update()
 
-codesPath = "/root/codes.txt"
+codesFileName = "codes.txt"
+codesPath = "/root"
 
 if params[0] == "getLan" then
 	result = aptClient.install("ScanLan.exe", current_path)
@@ -26,8 +27,8 @@ if params[0] == "getLan" then
 	end if
 end if
 
-
-serverShell = get_shell.connect_service(repoIP, 22, "root", "noah666", "ssh")
+serverShell = null
+if useApt then serverShell = get_shell.connect_service(repoIP, 22, "root", "noah666", "ssh")
 if typeof(serverShell) != "shell" and useApt then exit("useApt is True but shell couldnt be obtained!")
 
 dec = File(get_shell.host_computer, current_path + "/decipher")
@@ -43,32 +44,32 @@ getMemCodes = function(typeOfCode, net_session)
 	metaLib = net_session.dump_lib
 	memory = null
 
-if typeof(serverShell) == "shell" then
-	if serverShell.host_computer.File(codesPath) == null then 
-		hostComputer = serverShell.host_computer
-		createResult = hostComputer.touch(path, codesPath.split("/")[-1])
-		if typeof(createResult) == "string" then
-		print(createResult + " Happy")
-		else
-		print("File got created at given path " + path)
+	if useApt then
+		if serverShell.host_computer.File(codesPath + "/" + codesFileName) == null then 
+			hostComputer = serverShell.host_computer
+			createResult = hostComputer.touch(codesPath, codesFileName)
+			if typeof(createResult) == "number" then
+				print("[SERVER] File got created at given path " + path)
+			else if typeof(createResult) == "string" then
+				print("[SERVER] " + createResult)
+			end if
+		end if
+	else
+		if get_shell.host_computer.File(current_path + "/" + codesFileName) == null then 
+			hostComputer = get_shell.host_computer
+			createResult = hostComputer.touch(current_path, codesFileName)
+			if typeof(createResult) == "number" then
+				print("[LOCAL] File got created at given path " + current_path)
+			else if typeof(createResult) == "string" then
+				print("[LOCAL] " + createResult)
+			end if
 		end if
 	end if
-else
-	if get_shell.host_computer.File(codesPath) == null then 
-		hostComputer = get_shell.host_computer
-		createResult = hostComputer.touch(path, codesPath.split("/")[-1])
-		if typeof(createResult) == "string" then
-		print(createResult + " Happy")
-		else
-		print("File got created at given path " + path)
-		end if
-	end if
-end if
 
-	if not useApt then codesFile = get_shell.host_computer.File(codesPath)
-	if useApt then codesFile = serverShell.host_computer.File(codesPath)
+	if not useApt then codesFile = get_shell.host_computer.File(current_path + "/" + codesFileName)
+	if useApt then codesFile = serverShell.host_computer.File(codesPath + "/" + codesFileName)
 
-	if codesFile == null then print("codes.txt doesnt exist at path:\n " + codesPath)
+	if codesFile == null then exit("codes.txt doesnt exist at path: " + codesPath) //ONLY FOR DEBUG REASONS.. SHOULD ALREADY BE CREATED IF NOT EXISTING
 
 	codeCont = codesFile.get_content.split(":")
 
@@ -85,8 +86,8 @@ end if
 		memory = metaxploit.scan(metaLib)
 		toWriteMem = " " + memory
 
-		if useApt then serverShell.host_computer.File(codesPath).set_content(serverShell.host_computer.File(codesPath).get_content + typeOfCode + toWriteMem + ":")
-		if not useApt then get_shell.host_computer.File(codesPath).set_content(get_shell.host_computer.File(codesPath).get_content + typeOfCode + toWriteMem + ":")	
+		if useApt then serverShell.host_computer.File(codesPath + "/" + codesFileName).set_content(serverShell.host_computer.File(codesPath + "/" + codesFileName).get_content + typeOfCode + toWriteMem + ":")
+		if not useApt then get_shell.host_computer.File(current_path + "/" + codesFileName).set_content(get_shell.host_computer.File(current_path + "/" + codesFileName).get_content + typeOfCode + toWriteMem + ":")	
 	end if
 
 	return [memory, metaLib]
