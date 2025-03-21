@@ -3,88 +3,21 @@ if params.len != 1 or params[0] == "-h" or params[0] == "--help" then
 	exit("<b>Usage: " + program_path.split("/")[-1] + " [ip_address]</b>")
 end if
 
-useApt = true;
-customObj = get_custom_object()
-
-aptClient = include_lib("/lib/aptclient.so")
-if not aptClient then aptClient = include_lib(current_path + "/aptclient.so")
-if not aptClient then exit("There is no aptclient.so at " + current_path + " or /lib!")
-
-repoIP = "128.160.180.228"
-aptClient.add_repo(repoIP)
-aptClient.update()
-
-codesPath = "/root/codes.txt"
-
-serverShell = get_shell.connect_service(repoIP, 22, "root", "noah666", "ssh")
-if typeof(serverShell) != "shell" and useApt then exit("useApt is True but shell couldnt be obtained!")
-
-dec = File(get_shell.host_computer, current_path + "/decipher")
-if useApt and not dec then aptClient.install("decipher", current_path)
 
 metaxploit = include_lib("/lib/metaxploit.so")
-if not metaxploit then metaxploit = include_lib(current_path + "/metaxploit.so")
-if not metaxploit and useApt then aptClient.install("metaxploit.so", current_path)
-metaxploit = include_lib(current_path + "/metaxploit.so")
-if not metaxploit then exit("Error: Can't find metaxploit library in the /lib path or the current folder")
+dec = get_shell.host_computer.File("/root/decipher")
 
-getMemCodes = function(typeOfCode, net_session)
-	metaLib = net_session.dump_lib
-	memory = null
-
-	if serverShell.host_computer.File(codesPath) == null then 
-		hostComputer = serverShell.host_computer
-		createResult = hostComputer.touch(path, codesPath.split("/")[-1])
-		if typeof(createResult) == "string" then
-		print(createResult + " Happy")
-		else
-		print("File got created at given path " + path)
-		end if
-	end if
-
-	if not useApt then codesFile = get_shell.host_computer.File(codesPath)
-	if useApt then codesFile = serverShell.host_computer.File(codesPath)
-
-	if codesFile == null then print("codes.txt doesnt exist at path:\n " + codesPath)
-
-	codeCont = codesFile.get_content.split(":")
-
-	for line in codeCont
-		if line == "" then break
-		le = line.split(" ")
-		if le[0] + " " + le[1] != typeOfCode then continue
-		memory = line[line.indexOf("[") : line.indexOf(":")]
-		memory = memory.split("""")
-		break
-	end for
-
-	if memory == null then
-		memory = metaxploit.scan(metaLib)
-		toWriteMem = " " + memory
-
-		if useApt then serverShell.host_computer.File(codesPath).set_content(serverShell.host_computer.File(codesPath).get_content + typeOfCode + toWriteMem + ":")
-		if not useApt then get_shell.host_computer.File(codesPath).set_content(get_shell.host_computer.File(codesPath).get_content + typeOfCode + toWriteMem + ":")	
-	end if
-
-	return [memory, metaLib]
-end function
-
-choseSmth = function(listOfVariables = ["option 1"], descriptionText = "No description set", removeInt = 0, isForChoosing = true)
-	markPrefix = "<mark=#D1D1D143>"
-	infoPrefix = "<color=#FF0000df>"
+choseSmth = function(listOfVariables = ["option 1"], descriptionText = "No description set", removeInt = 0)
 	num = 0
 	if removeInt > 0 then listOfVariables.remove(removeInt - 1)
 	while (true)
 		clear_screen
-		if not isForChoosing then 
-			print (infoPrefix + descriptionText)
-			return wait(2)
-		end if
-		if isForChoosing then print (descriptionText)
+		print (descriptionText)
+		isActive = "<mark=#D1D1D143>"
 		counter = 0
 
 		for variables in listOfVariables
-			if counter == num then print(markPrefix + variables)
+			if counter == num then print(isActive + variables)
 			if counter != num then print(variables)
 			counter = counter + 1
 		end for
@@ -110,9 +43,8 @@ optionForRouter = function()
 	service_info = "Kernel " + get_router.kernel_version
 
 	typeOfCode = service_info
-	values = getMemCodes(typeOfCode, net_session)
-	memory = values[0]
-	metaLib = values[1]
+	metaLib = net_session.dump_lib
+	memory = metaxploit.scan(metaLib)
 
 	option = choseSmth(["1: getPasswords", "2: getMails" ,"3: getAccsess"], "Choose a Option:")
 
@@ -157,9 +89,8 @@ optionForPorts = function()
 	service_info = infoPr[option]
 
 	typeOfCode = service_info
-	values = getMemCodes(typeOfCode, net_session)
-	memory = values[0]
-	metaLib = values[1]
+	metaLib = net_session.dump_lib
+	memory = metaxploit.scan(metaLib)
 
 	option = choseSmth(["1: getPasswords", "2: getMails" ,"3: getAccsess"], "Choose a Option:")
 
@@ -224,20 +155,7 @@ for obj in passwords
 	end for
 end for
 
-if users.len < 1 and not getRoot then
-	choseSmth([], "Passwords couldnt get collected", 0, false) //Didnt work
-
-	optionPortsOrRouter = choseSmth(["1: Ports", "2: Router"], "Select:") //Selecting
-
-	service_info = null
-
-	if optionPortsOrRouter == 1 then optionForRouter()
-	if optionPortsOrRouter == 0 then optionForPorts()
-else 
-	clear_screen()
-	print("Root password couldnt get collected")
-	return
-end if
+if users.len < 1 then return("Passwords couldnt get collected")
 
 if getRoot then 
 	option = 0
@@ -247,8 +165,9 @@ end if
 
 print("\nUser: " + users[option].split(":")[0])
 if get_shell.launch(current_path + "/decipher", users[option]) != 1 then 
+	print("No decipher found in path: " + current_path + "/decipher")
 	
-	choseSmth([], "No decipher found in path: " + current_path + "/decipher", 0, false) //Didnt work
+	choseSmth(["Press enter to continue"], "No decipher found in path: " + current_path + "/decipher") //Didnt work
 
 	optionPortsOrRouter = choseSmth(["1: Ports", "2: Router"], "Select:") //Selecting
 
@@ -320,7 +239,7 @@ end for
 
 
 if passwords.len < 1 then
-	choseSmth([], "Emails couldnt get collected", 0, false) //Didnt work
+	choseSmth(["Press enter to continue"], "Emails couldnt get collected") //Didnt work
 
 	optionPortsOrRouter = choseSmth(["1: Ports", "2: Router"], "Select:") //Selecting
 
@@ -336,7 +255,7 @@ option = choseSmth(output, "Select a user: ") //Selecting
 print("\nUser: " + users[option].split(":")[0])
 if get_shell.launch(current_path + "/decipher", passwords[option]) != 1 then
 
-	choseSmth([], "No decipher found in path: " + current_path + "/decipher", 0, false) //Didnt work
+	choseSmth(["Press enter to continue"], "No decipher found in path: " + current_path + "/decipher") //Didnt work
 
 	optionPortsOrRouter = choseSmth(["1: Ports", "2: Router"], "Select:") //Selecting
 
@@ -374,7 +293,7 @@ for mem in memory
 	end for
 end for
 
-	choseSmth([], "The exploit failed to gain accsess", 0, false) //Didnt work
+	choseSmth(["Press enter to continue"], "The exploit failed to gain accsess") //Didnt work
 
 	optionPortsOrRouter = choseSmth(["1: Ports", "2: Router"], "Select:") //Selecting
 
@@ -405,7 +324,6 @@ end if
 if ports == null then exit("nmap: ip address not found")
 if typeof(ports) == "string" then exit(ports)
 
-
 optionPortsOrRouter = choseSmth(["1: Ports", "2: Router"], "Select:") //Selecting
 
 service_info = null
@@ -413,3 +331,7 @@ service_info = null
 if optionPortsOrRouter == 1 then optionForRouter()
 
 if optionPortsOrRouter == 0 then optionForPorts()
+
+
+
+
