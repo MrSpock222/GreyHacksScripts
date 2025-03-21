@@ -20,8 +20,7 @@ codesPath = "/root"
 if params[0] == "getLan" then
 	result = aptClient.install("ScanLan.exe", current_path)
 	if result == 1 then 
-		print("Installation of ScanLan.exe was succsessful!")
-		get_shell.launch(current_path + "/ScanLan.exe")
+		exit("Installation of ScanLan.exe was succsessful!")
 	else
 		exit("Installation of ScanLan.exe failed!")
 	end if
