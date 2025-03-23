@@ -632,7 +632,7 @@ startFunc = function()
 	option = choseSmth(format_columns(portInfo).split("\n"), "", 1, format_columns(allLanDevices).split("\n"), true) //Selecting
 
 	if option == 0 then optionForRouter(allLanDevices, portInfo)
-	if option == 1 then optionForPorts(allLanDevices, portInfo, portList, option)
+	if option != 1 then optionForPorts(allLanDevices, portInfo, portList, option)
 		
 		
 end function
