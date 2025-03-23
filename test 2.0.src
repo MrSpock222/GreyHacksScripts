@@ -242,10 +242,123 @@ connectToShell = function(targetShell)
 	
 end function
 
-recursiveFunc = function(input, counter = 1, symbol = "L")
+getPasswords = function(comp, skip = false)
+file = null
+shell = null
+pass = null
+passwords = []
+
+if typeof(comp) == "file" then file = comp
+if typeof(comp) == "computer" then file = comp.File("/etc/passwd")
+if not file then exit(actionEnded("Could not find file at /etc/passwd"))
+	
+	
+cont = file.get_content
+if not cont and not file.has_permission("r")then exit(actionEnded("Could not get content of file because you have no reading permissions"))
+
+if not cont then exit(actionEnded("Could not get content of file"))
+
+pass = cont.split("\n")
+for obj in pass
+	passwords.push(pass)
+end for
+
+num = 1
+users = []
+output = []
+testBool = false
+for obj in passwords
+	for i in obj
+		for user in users
+			if user == i then testBool = true
+		end for
+
+		if testBool then
+			testBool = false
+			continue
+		end if
+		users.push(i)
+		if i != "" then output.push(num + ": " + i)
+		num = num + 1
+	end for
+end for
+
+if users.len < 1 then exit(actionEnded("Passwords couldnt get collected"))
+
+if skip then output.push("----Skip----")
+option = choseSmth(output, "Select a user: ") //Selecting
+
+if option == users.len then return
+
+if get_shell.launch(current_path + "/decipher", users[option]) != 1 then exit(actionEnded("No decipher found in path: " + current_path + "/decipher"))
+
+
+end function
+
+getMails = function(comp, skip = false)
+shell = null
+pass = null
+passwords = []
+
+
+if typeof(comp) == "file" then passwords.push(comp.get_content)
+
+if typeof(comp) == "computer" then 
+	homeDir = comp.File("/home")
+	if homeDir and homeDir.get_folders then 
+		userFolders = homeDir.get_folders()       
+		for userFolder in userFolders
+			mailcodesPath = userFolder.path + "/Config/Mail.txt"
+			mailFile = comp.File(mailcodesPath)
+			if not mailFile then continue //("Could not find file at /Config/Mail.txt")
+			cont = mailFile.get_content
+			if not cont then continue //("Could not get content of file")
+			passwords.push(cont)
+		end for
+	end if
+end if
+
+
+
+num = 1
+users = []
+output = []
+testBool = false
+for i in passwords
+
+	for user in users
+		if user == i then testBool = true
+	end for
+
+	if testBool then
+		testBool = false
+		continue
+	end if
+
+	users.push(i)
+	output.push(num + ": " + i)
+	num = num + 1
+end for
+
+
+
+if passwords.len < 1 then exit(actionEnded("Emails couldnt get collected"))
+
+if skip then output.push("----Skip----")
+option = choseSmth(output, "Select a user: ") //Selecting
+
+if option == users.len then return
+
+if get_shell.launch(current_path + "/decipher", passwords[option]) != 1 then exit(actionEnded("No decipher found in path: " + current_path + "/decipher"))
+
+
+end function
+
+usersString = ""
+
+recursiveFunc = function(input, counter = 1,passwords = true, symbol = "L")
 
 	if counter == 1 then 
-		print(input.name)
 		while (input.path != "/")
 			input = input.parent
 		end while
@@ -258,7 +371,6 @@ recursiveFunc = function(input, counter = 1, symbol = "L")
 		for c in range(counter)
 			fileName = fileName.insert(0," ")
 		end for
-		print(fileName)
 	else
 	
 		for dir in input.get_folders
@@ -269,7 +381,7 @@ recursiveFunc = function(input, counter = 1, symbol = "L")
 				fileName = fileName.insert(0," ")
 			end for
 
-			print(fileName + dir.get_files.len + " " + dir.get_folders.len )
+			//print(fileName + dir.get_files.len + " " + dir.get_folders.len )
 
 			for file in dir.get_files
 				fileName = file.name
@@ -280,13 +392,15 @@ recursiveFunc = function(input, counter = 1, symbol = "L")
 				end for
 
 				if file.has_permission("r") then 
-					print(file.get_content)
-				else
-					print("You dont have any Permissions to read the file")
+					if passwords and file.name == "passwd" then getPasswords(file, true)
+					if not passwords and file.name == "Mail.txt" then getMails(file, true)
 				end if
+				// else
+				// 	print("You dont have any Permissions to read the file " + file.name)
+				// end if
 			end for
 
-			recursiveFunc(dir, counter + 1)
+			recursiveFunc(dir, counter + 1, passwords)
 		end for
 
 		for file in input.get_files
@@ -298,7 +412,8 @@ recursiveFunc = function(input, counter = 1, symbol = "L")
 			end for
 
 			if file.has_permission("r") then 
-				print(file.get_content)
+				if passwords and file.name == "passwd" then getPasswords(file, true)
+				if not passwords and file.name == "Mail.txt" then getMails(file, true)
 			else
 				textFile = "<b>" + file.name + "</b>"
 				print("<color=#FF0000df>" + "You dont have any Permissions to read " + textFile)
@@ -413,12 +528,23 @@ optionForRouter = function(allLanDevices, portInfo)
 
 	if XPLOITS[num][0] == "computer" then metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2], userInput)
 	if XPLOITS[num][0] == "number" then metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2], userInput)
-	if XPLOITS[num][0] == "file" then recursiveFunc(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]))
+	if XPLOITS[num][0] == "file" then 
+		option = choseSmth(["1: Get passwords", "2: Get mails"], "Choose a option")
+
+		if option == 0 then recursiveFunc(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]), 1, true)
+		if option == 1 then	recursiveFunc(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]), 1, false)
+	end if
+		
+		
 
 
 	if XPLOITS[num][0] == "null" then 
 		res = metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2], userInput)
-		if typeof(res) == "file" then recursiveFunc(res)
+		if typeof(res) == "file" then 
+			option = choseSmth(["1: Get passwords", "2: Get mails"], "Choose a option")
+			if option == 0 then recursiveFunc((res), 1, true)
+			if option == 1 then	recursiveFunc((res), 1, false)
+		end if
 		if typeof(res) == "computer" then
 			option = choseSmth(["1: Get passwords", "2: Get mails"], "Choose a option")
 			if option == 0 then getPasswords(res)
@@ -505,11 +631,25 @@ optionForPorts = function(allLanDevices, portInfo, portList, option)
 	end if
 
 	if XPLOITS[num][0] == "number" then metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2], userInput)
-	if XPLOITS[num][0] == "file" then recursiveFunc(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]))
+	if XPLOITS[num][0] == "file" then 
+		option = choseSmth(["1: Get passwords", "2: Get mails"], "Choose a option")
+
+		if option == 0 then recursiveFunc(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]), 1, true)
+		if option == 1 then recursiveFunc(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]), 1, false)
+	end if
+		
 
 	if XPLOITS[num][0] == "null" then 
 		res = metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2], userInput)
-		if typeof(res) == "file" then recursiveFunc(res)
+		if typeof(res) == "file" then 
+			option = choseSmth(["1: Get passwords", "2: Get mails"], "Choose a option")
+
+			if option == 0 then recursiveFunc(res, 1, true)
+			if option == 1 then recursiveFunc(res, 1, false)
+		end if
+			
+			
+			
 		if typeof(res) == "computer" then 
 		
 			option = choseSmth(["1: Get passwords", "2: Get mails"], "Choose a option")
@@ -526,106 +666,6 @@ optionForPorts = function(allLanDevices, portInfo, portList, option)
 	else
 		actionEnded("Exploit succedeed!")
 	end if
-end function
-
-getPasswords = function(comp)
-shell = null
-pass = null
-passwords = []
-
-file = comp.File("/etc/passwd")
-if not file then exit(actionEnded("Could not find file at /etc/passwd"))
-	
-	
-cont = file.get_content
-if not cont and not file.has_permission("r")then exit(actionEnded("Could not get content of file because you have no reading permissions"))
-
-if not cont then exit(actionEnded("Could not get content of file"))
-
-pass = cont.split("\n")
-for obj in pass
-	passwords.push(pass)
-end for
-
-num = 1
-users = []
-output = []
-testBool = false
-for obj in passwords
-	for i in obj
-		for user in users
-			if user == i then testBool = true
-		end for
-
-		if testBool then
-			testBool = false
-			continue
-		end if
-		users.push(i)
-		if i != "" then output.push(num + ": " + i)
-		num = num + 1
-	end for
-end for
-
-if users.len < 1 then exit(actionEnded("Passwords couldnt get collected"))
-
-option = choseSmth(output, "Select a user: ") //Selecting
-
-if get_shell.launch(current_path + "/decipher", users[option]) != 1 then exit(actionEnded("No decipher found in path: " + current_path + "/decipher"))
-
-
-end function
-
-getMails = function(comp)
-shell = null
-pass = null
-passwords = []
-
-		
-homeDir = comp.File("/home")
-if homeDir and homeDir.get_folders then 
-	userFolders = homeDir.get_folders()       
-	for userFolder in userFolders
-		mailcodesPath = userFolder.path + "/Config/Mail.txt"
-		mailFile = comp.File(mailcodesPath)
-		if not mailFile then continue //("Could not find file at /Config/Mail.txt")
-		cont = mailFile.get_content
-		if not cont then continue //("Could not get content of file")
-		passwords.push(cont)
-	end for
-end if
-
-
-num = 1
-users = []
-output = []
-testBool = false
-for i in passwords
-
-	for user in users
-		if user == i then testBool = true
-	end for
-
-	if testBool then
-		testBool = false
-		continue
-	end if
-
-	users.push(i)
-	output.push(num + ": " + i)
-	num = num + 1
-end for
-
-
-
-if passwords.len < 1 then exit(actionEnded("Emails couldnt get collected"))
-
-option = choseSmth(output, "Select a user: ") //Selecting
-
-
-if get_shell.launch(current_path + "/decipher", passwords[option]) != 1 then exit(actionEnded("No decipher found in path: " + current_path + "/decipher"))
-
-
 end function
 
 actionEnded = function(descriptionText = "No description set.")
