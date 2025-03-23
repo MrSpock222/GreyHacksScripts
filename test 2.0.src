@@ -491,8 +491,8 @@ optionForPorts = function(allLanDevices, portInfo, portList, option)
 		
 		option = choseSmth(["1: Get passwords", "2: Get mails"], "Choose a option")
 
-		if option == 0 then	getPasswords(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]).host_computer)
-		if option == 1 then	getMails(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]).host_computer)
+		if option == 0 then	getPasswords(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]))
+		if option == 1 then	getMails(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]))
 	end if
 
 	if XPLOITS[num][0] == "number" then metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2], userInput)
@@ -505,8 +505,8 @@ optionForPorts = function(allLanDevices, portInfo, portList, option)
 		
 			option = choseSmth(["1: Get passwords", "2: Get mails"], "Choose a option")
 
-			if option == 0 then	getPasswords(res.host_computer)
-			if option == 1 then	getMails(res.host_computer)
+			if option == 0 then	getPasswords(res)
+			if option == 1 then	getMails(res)
 		end if
 
 		if typeof(res) == "shell" then connectToShell(res)
