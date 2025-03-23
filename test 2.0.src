@@ -395,12 +395,13 @@ recursiveFunc = function(input, counter = 1,passwords = true, symbol = "L")
 					if passwords and file.name == "passwd" then getPasswords(file, true)
 					if not passwords and file.name == "Mail.txt" then getMails(file, true)
 				end if
+
 				// else
 				// 	print("You dont have any Permissions to read the file " + file.name)
 				// end if
 			end for
 
-			recursiveFunc(dir, counter + 1, passwords)
+			if not get_custom_object["succeeded"] then recursiveFunc(dir, counter + 1, passwords)
 		end for
 
 		for file in input.get_files
