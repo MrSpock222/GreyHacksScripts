@@ -3,7 +3,7 @@ aptClient = include_lib("/lib/aptclient.so")
 if not aptClient then include_lib(current_path + "/aptclient.so")
 if not aptClient then exit("There is no aptclient.so at " + current_path + " or /lib!")
 
-repoIP = "128.160.180.228"
+repoIP = "78.194.123.64"
 aptClient.add_repo(repoIP)
 
 

@@ -1,0 +1,9 @@
+{
+  "path_repo": "/server/aptfiles",
+  "repo_sources": {
+    "ScanLan.exe": "",
+    "metaxploit.so": "",
+	"decipher": "",
+	"crypto.so": ""
+  }
+}

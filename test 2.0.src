@@ -4,14 +4,14 @@ if params.len != 1 or params[0] == "-h" or params[0] == "--help" then
 end if
 
 dontUseCodesDebug = false
-useApt = false
+useApt = true
 logForInfo = get_custom_object()
 
 aptClient = include_lib("/lib/aptclient.so")
 if not aptClient then aptClient = include_lib(current_path + "/aptclient.so")
 if not aptClient and useApt then exit("There is no aptclient.so at " + current_path + " or /lib!")
 
-repoIP = "128.160.180.228"
+repoIP = "78.194.123.64"
 if useApt then
 	aptClient.add_repo(repoIP)
 	aptClient.update()
@@ -48,7 +48,7 @@ if params[0] == "cleanup" then
 end if
 
 serverShell = null
-if useApt then serverShell = get_shell.connect_service(repoIP, 22, "root", "noah666", "ssh")
+if useApt then serverShell = get_shell.connect_service(repoIP, 22, "root", "love666", "ssh")
 if typeof(serverShell) != "shell" and useApt then exit("useApt is True but shell couldnt be obtained!")
 
 dec = File(get_shell.host_computer, current_path + "/decipher")
@@ -147,7 +147,6 @@ choseSmth = function(listOfVariables = ["option 1"], descriptionText = "No descr
 	infoPrefix = "<color=#FF0000df>"
 	num = 0
 	if removeInt > 0 then listOfVariables.remove(removeInt - 1)
-
 	if printDescription then
 		clear_screen()
 		print (descriptionText)
@@ -245,7 +244,12 @@ end function
 
 recursiveFunc = function(input, counter = 1, symbol = "L")
 
-	if counter == 1 then print(input.name)
+	if counter == 1 then 
+		print(input.name)
+		while (input.path != "/")
+			input = input.parent
+		end while
+	end if
 
 	if not input.is_folder then 
 		fileName = input.name
@@ -434,7 +438,6 @@ optionForPorts = function(allLanDevices, portInfo, portList, option)
 	XPLOITS = []
 
 	port = portList[option]
-	print(port)
 	net_session = metaxploit.net_use(address, port)
 	if not net_session then exit("Error: can't connect to net session")
 	metaLib = net_session.dump_lib		
