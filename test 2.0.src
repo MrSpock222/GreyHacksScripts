@@ -556,6 +556,7 @@ end for
 
 if users.len < 1 then exit(actionFailed("Passwords couldnt get collected"))
 
+option = choseSmth(output, "Select a user: ") //Selecting
 
 if get_shell.launch(current_path + "/decipher", users[option]) != 1 then exit(actionFailed("No decipher found in path: " + current_path + "/decipher"))
 
