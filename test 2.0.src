@@ -1,0 +1,640 @@
+
+if params.len != 1 or params[0] == "-h" or params[0] == "--help" then
+	exit("<b>Usage: " + program_path.split("/")[-1] + " [ip_address]</b>")
+end if
+
+dontUseCodesDebug = false
+useApt = false
+log = get_custom_object()
+
+aptClient = include_lib("/lib/aptclient.so")
+if not aptClient then aptClient = include_lib(current_path + "/aptclient.so")
+if not aptClient and useApt then exit("There is no aptclient.so at " + current_path + " or /lib!")
+
+repoIP = "128.160.180.228"
+if useApt then
+	aptClient.add_repo(repoIP)
+	aptClient.update()
+end if
+
+codesFileName = "codes.txt"
+codesPath = "/root"
+
+if params[0] == "getLan" then
+	result = aptClient.install("ScanLan.exe", current_path)
+	if result == 1 then 
+		exit("Installation of ScanLan.exe was succsessful!")
+	else
+		exit("Installation of ScanLan.exe failed!")
+	end if
+end if
+
+if params[0] == "cleanup" then
+	currentFolder = get_shell.host_computer.File(current_path)
+	colorPrefix = "<color=#FF0000df>"
+	clear_screen()
+
+	for file in currentFolder.get_files
+		fileName = file.name
+		result = file.delete
+		if result == "" then print(fileName + " got successfully deleted.")
+		if result != "" then print(colorPrefix + fileName + " " + result)
+	end for
+
+	
+	emptyRow = "\n" + colorPrefix + "<b>-------------------------------------------------------</b>\n"
+	portInfo = colorPrefix + "<b>Make sure to empty the logs, since deleting files will leave a log entry!</b>"
+	exit(emptyRow + portInfo + emptyRow)
+end if
+
+serverShell = null
+if useApt then serverShell = get_shell.connect_service(repoIP, 22, "root", "noah666", "ssh")
+if typeof(serverShell) != "shell" and useApt then exit("useApt is True but shell couldnt be obtained!")
+
+dec = File(get_shell.host_computer, current_path + "/decipher")
+if useApt and not dec then aptClient.install("decipher", current_path)
+
+metaxploit = include_lib("/lib/metaxploit.so")
+if not metaxploit then metaxploit = include_lib(current_path + "/metaxploit.so")
+if not metaxploit and useApt then aptClient.install("metaxploit.so", current_path)
+if not metaxploit then metaxploit = include_lib(current_path + "/metaxploit.so")
+if not metaxploit then exit("Error: Can't find metaxploit library in the /lib path or the current folder")
+
+//################################################SETUP ADDRESS################################################
+
+address = params[0]
+isLanIp = is_lan_ip( address )
+
+if isLanIp then
+   router = get_router;
+else
+   router = get_router( address )
+end if
+
+if router == null then exit("nmap: ip address not found")
+ports = null
+
+if not isLanIp then
+	ports = router.used_ports
+else
+   ports = router.device_ports(address)
+end if
+
+if ports == null then exit("nmap: ip address not found")
+if typeof(ports) == "string" then exit(ports)
+
+if(ports.len == 0) then exit("Scan finished. No open ports found at " + params[0])
+
+//################################################SETUP ADDRESS################################################
+
+getMemCodes = function(typeOfCode, metaLib)
+	memory = null
+
+	if dontUseCodesDebug then return metaxploit.scan(metaLib)
+
+	if useApt then
+		if serverShell.host_computer.File(codesPath + "/" + codesFileName) == null then 
+			hostComputer = serverShell.host_computer
+			createResult = hostComputer.touch(codesPath, codesFileName)
+			if typeof(createResult) == "number" then
+				print("[SERVER] File got created at given path " + path)
+			else if typeof(createResult) == "string" then
+				print("[SERVER] " + createResult)
+			end if
+		end if
+	else
+		if get_shell.host_computer.File(current_path + "/" + codesFileName) == null then 
+			hostComputer = get_shell.host_computer
+			createResult = hostComputer.touch(current_path, codesFileName)
+			if typeof(createResult) == "number" then
+				print("[LOCAL] File got created at given path " + current_path)
+			else if typeof(createResult) == "string" then
+				print("[LOCAL] " + createResult)
+			end if
+		end if
+	end if
+
+	if not useApt then codesFile = get_shell.host_computer.File(current_path + "/" + codesFileName)
+	if useApt then codesFile = serverShell.host_computer.File(codesPath + "/" + codesFileName)
+
+	if codesFile == null then exit("codes.txt doesnt exist at path: " + codesPath) //ONLY FOR DEBUG REASONS.. SHOULD ALREADY BE CREATED IF NOT EXISTING
+
+	codeCont = codesFile.get_content.split(":")
+
+	for line in codeCont
+		if line == "" then break
+		le = line.split(" ")
+		if le[0] + " " + le[1] != typeOfCode then continue
+		memory = line[line.indexOf("[") : line.indexOf(":")]
+		memory = memory.split("""")
+		break
+	end for
+
+	if memory == null then
+		memory = metaxploit.scan(metaLib)
+		toWriteMem = " " + memory
+
+		if useApt then serverShell.host_computer.File(codesPath + "/" + codesFileName).set_content(serverShell.host_computer.File(codesPath + "/" + codesFileName).get_content + typeOfCode + toWriteMem + ":")
+		if not useApt then get_shell.host_computer.File(current_path + "/" + codesFileName).set_content(get_shell.host_computer.File(current_path + "/" + codesFileName).get_content + typeOfCode + toWriteMem + ":")	
+	end if
+
+	return memory
+end function
+
+choseSmth = function(listOfVariables = ["option 1"], descriptionText = "No description set", removeInt = 0, showInternalsString = [], showInfo = false, printDescription = false)
+	markPrefix = "<mark=#D1D1D143>"
+	infoPrefix = "<color=#FF0000df>"
+	num = 0
+	if removeInt > 0 then listOfVariables.remove(removeInt - 1)
+
+	if printDescription then
+		clear_screen()
+		print (descriptionText)
+
+
+		counter = 0
+
+		if showInfo then
+			print("Found: " + router.devices_lan_ip.len + " machines connected!")
+
+			for el in router.devices_lan_ip
+				print(el)
+			end for
+		end if
+
+		print("-------------------------------------------")
+		for variables in listOfVariables
+			print(variables)
+		end for
+		print("-------------------------------------------")
+
+		for variables in showInternalsString
+			print(variables)
+		end for
+	else
+		while (true)	
+
+			clear_screen()
+			print (descriptionText)
+
+
+			counter = 0
+
+			if showInfo then
+				print("Found: " + router.devices_lan_ip.len + " machines connected!")
+
+				for el in router.devices_lan_ip
+					print(el)
+				end for
+			end if
+
+			print("-------------------------------------------")
+			for variables in listOfVariables
+				if counter == num then print(markPrefix + variables)
+				if counter != num then print(variables)
+				counter = counter + 1
+			end for
+			print("-------------------------------------------")
+
+			for variables in showInternalsString
+				print(variables)
+			end for
+
+			key = user_input("Press Up or Down arrow Key", false, true)
+
+			if (key == "DownArrow") or (key == "s") then 
+				num = num + 1
+				if num > listOfVariables.len - 1 then num = 0
+			else if (key == "UpArrow") or (key == "w") then 
+				num = num - 1
+				if num < 0 then num = listOfVariables.len - 1
+			else
+				clear_screen()		
+				print("You chose: " + (num + 1))
+				return num
+			end if
+		end while
+	end if
+end function
+
+connectToShell = function(targetShell)
+	option = ""
+	while(true)
+		option = user_input("Do you want to copy test:", false, false)
+		option = option.trim
+		if option == "Y" or option == "y" or option == "N" or option == "n" then 
+			break
+		end if
+	end while
+
+	if option == "Y" or option == "y" then
+		currentShell = get_shell
+		testScript = launch_path
+		username = targetShell.launch("/bin/whoami")
+		if username != "root" then res = targetShell.scp(testScript, "/home/" + username, currentShell)
+		if username == "root" then res = targetShell.scp(testScript, "/home/root", currentShell)
+		print(res)
+	end if
+
+
+
+	targetShell.start_terminal
+	
+end function
+
+recursiveFunc = function(input, counter = 1, symbol = "L")
+
+	if counter == 1 then print(input.name)
+
+	if not input.is_folder then 
+		fileName = input.name
+
+		fileName = fileName.insert(0, symbol)
+		for c in range(counter)
+			fileName = fileName.insert(0," ")
+		end for
+		print(fileName)
+	else
+	
+		for dir in input.get_folders
+			fileName = dir.name
+		
+			fileName = fileName.insert(0, symbol)
+			for c in range(counter)
+				fileName = fileName.insert(0," ")
+			end for
+
+			print(fileName + dir.get_files.len + " " + dir.get_folders.len )
+
+			for file in dir.get_files
+				fileName = file.name
+
+				fileName = fileName.insert(0, symbol)
+				for c in range(counter)
+					fileName = fileName.insert(0," ")
+				end for
+
+				if file.has_permission("r") then 
+					print(file.get_content)
+				else
+					print("You dont have any Permissions to read the file")
+				end if
+			end for
+
+			recursiveFunc(dir, counter + 1)
+		end for
+
+		for file in input.get_files
+			fileName = file.name
+
+			fileName = fileName.insert(0, symbol)
+			for c in range(counter)
+				fileName = fileName.insert(0," ")
+			end for
+
+			if file.has_permission("r") then 
+				print(file.get_content)
+			else
+				textFile = "<b>" + file.name + "</b>"
+				print("<color=#FF0000df>" + "You dont have any Permissions to read " + textFile)
+			end if
+		end for
+	end if
+end function
+
+getInfo = function()
+//################################################PUSH ALL SERVICES TO LIST################################################
+portIndex = 1
+portInfo = ""
+allLanDevices = ""
+pr = []
+
+//PUSH ROUTER TO ADDRESS LIST
+service_info = router.kernel_version
+portInfo = portInfo + "\n" + portIndex + " " + router.public_ip + " " + "gateway" + " " + "router" + " " + service_info + " " + router.local_ip
+pr.push(0)
+portIndex = portIndex + 1
+//PUSH ROUTER TO ADDRESS LIST
+
+	for port in ports
+		service_info = router.port_info(port)
+		lan_ips = port.get_lan_ip
+		port_status = "open"
+
+		if(port.is_closed and not isLanIp) then
+			port_status = "closed"
+		end if
+		
+		portInfo = portInfo + "\n" + portIndex + " " + port.port_number + " " + port_status + " " + service_info + " " + lan_ips
+		pr.push(port.port_number)
+		portIndex = portIndex + 1
+	end for
+
+	for el in router.devices_lan_ip
+		for port in router.device_ports(el)
+			if router.port_info(port).matches("unknown") then continue
+			allLanDevices = allLanDevices + "\n" + portIndex + " " + port.port_number + " " + "internal" + " " + router.port_info(port) + " " + el
+			portIndex = portIndex + 1
+		end for
+	end for
+
+	return [allLanDevices, portInfo, pr]
+
+//################################################PUSH ALL SERVICES TO LIST################################################
+end function
+
+optionForRouter = function(allLanDevices, portInfo)
+	XPLOITS = []
+
+	net_session = metaxploit.net_use( address )
+	if not net_session then exit("Error: can't connect to net session")
+	metaLib = net_session.dump_lib
+	typeOfCode = metaLib.lib_name + " " + metaLib.version
+	memory = getMemCodes(typeOfCode, metaLib)
+	clear_screen()
+	memcodes = []
+
+	for mem in memory
+		address = metaxploit.scan_address(metaLib, mem).split("Unsafe check: ")
+
+		for add in address
+			if add == address[0] then continue
+			value = add[add.indexOf("<b>") + 3 : add.indexOf("</b>")]
+			value = value.replace("\n", "")
+			result = metaLib.overflow(mem, value)	
+			//if typeof(result) != "null" then
+				XPLOITS.push([typeof(result), mem, value])
+			//end if
+		end for
+	end for
+
+	clear_screen()
+
+	choseSmth(format_columns(portInfo).split("\n"), "", 1, format_columns(allLanDevices).split("\n"), true, true)
+
+	counter = 1
+	for xploit in XPLOITS
+		print("<color=blue>" + "<b>----------------------------------------------------</b>")
+		result = metaLib.overflow(xploit[1], xploit[2])	
+		if typeof(result) != "computer" and typeof(result) != "null" then print(counter + ": " + "Type: " + "<B>" + "<color=orange>" + typeof(result) + "</b>" + "</color>" +" at memcode: " + "<color=red>" + "<B>" + xploit[1] + "</b>")	
+		if typeof(result) == "null" then print(counter + ": " + "Type: " + "<B>" + "<color=red>" + typeof(result) + "</b>" + "</color>" +" at memcode: " + "<color=red>" + "<B>" + xploit[1] + "</b>")	
+		if typeof(result) == "computer" then print(counter + ": " + "Type: " + "<B>" + "<color=orange>" + "computer:" + "<color=#00F7FF>" + "bounce" + "</b>" + "</color>" +" at memcode: " + "<color=red>" + "<B>" + xploit[1] + "</b>")	
+		counter = counter + 1
+	end for
+
+
+	num = 0
+	while(true)
+		option = user_input("Choose a vulnerability:", false, false)
+		if option.trim.to_int <= XPLOITS.len and option.trim.to_int >= 1 then 
+			num = option.trim.to_int - 1
+			break
+		end if
+	end while
+
+	userInput = user_input("Do you want to pass a IP or a password?:", false, false)
+	userInput = userInput.trim
+
+	clear_screen()
+
+	if XPLOITS[num][0] == "shell" then 
+		
+		option = choseSmth(["1: Connect", "2: Get passwords", "3: Get mails"], "Choose a option")
+
+		if option == 0 then	connectToShell(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]))
+		if option == 1 then	getPasswords(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]).host_computer)
+		if option == 2 then	getMails(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]).host_computer)
+	end if
+
+	if XPLOITS[num][0] == "computer" then metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2], userInput)
+	if XPLOITS[num][0] == "number" then metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2], userInput)
+	if XPLOITS[num][0] == "file" then recursiveFunc(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]))
+
+
+	if XPLOITS[num][0] == "null" then 
+		res = metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2], userInput)
+		if typeof(res) == "file" then recursiveFunc(res)
+		if typeof(res) == "computer" then
+			option = choseSmth(["1: Get passwords", "2: Get mails"], "Choose a option")
+			if option == 0 then	getPasswords(res)
+			if option == 1 then	getMails(res)
+		end if
+		if typeof(res) == "shell" then connectToShell(res)
+	end if
+
+	actionFailed("Exploit failed")
+end function
+
+optionForPorts = function(allLanDevices, portInfo, portList, option)
+	XPLOITS = []
+
+	port = portList[option]
+	net_session = metaxploit.net_use(address, port)
+	if not net_session then exit("Error: can't connect to net session")
+	metaLib = net_session.dump_lib		
+	typeOfCode = metaLib.lib_name + " " + metaLib.version
+	memory = getMemCodes(typeOfCode, metaLib)
+	clear_screen()
+	memcodes = []
+
+	for mem in memory
+		address = metaxploit.scan_address(metaLib, mem).split("Unsafe check: ")
+
+		for add in address
+			if add == address[0] then continue
+			value = add[add.indexOf("<b>") + 3 : add.indexOf("</b>")]
+			value = value.replace("\n", "")
+			result = metaLib.overflow(mem, value)	
+			//if typeof(result) != "null" then 
+				XPLOITS.push([typeof(result), mem, value])
+			//end if
+		end for
+	end for
+
+	clear_screen()
+
+	choseSmth(format_columns(portInfo).split("\n"), "", 1, format_columns(allLanDevices).split("\n"), true, true)
+
+	counter = 1
+	for xploit in XPLOITS
+		print("<color=blue>" + "<b>----------------------------------------------------</b>")
+		result = metaLib.overflow(xploit[1], xploit[2])	
+		if typeof(result) != "null" then print(counter + ": " + "Type: " + "<B>" + "<color=orange>" + typeof(result) + "</b>" + "</color>" +" at memcode: " + "<color=red>" + "<B>" + xploit[1] + "</b>")	
+		if typeof(result) == "null" then print(counter + ": " + "Type: " + "<B>" + "<color=red>" + typeof(result) + "</b>" + "</color>" +" at memcode: " + "<color=red>" + "<B>" + xploit[1] + "</b>")	
+		counter = counter + 1
+	end for
+
+	num = 0
+	while(true)
+		option = user_input("Choose a vulnerability:", false, false)
+		if option.trim.to_int <= XPLOITS.len and option.trim.to_int >= 1 then 
+			num = option.trim.to_int - 1
+			break
+		end if
+	end while
+
+	userInput = user_input("Do you want to pass a IP or a password?:", false, false)
+	userInput = userInput.trim
+
+	clear_screen()
+
+	if XPLOITS[num][0] == "shell" then 
+		
+		option = choseSmth(["1: Connect", "2: Get passwords", "3: Get mails"], "Choose a option")
+
+		if option == 0 then	connectToShell(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]))
+		if option == 1 then	getPasswords(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]).host_computer)
+		if option == 2 then	getMails(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]).host_computer)
+	end if
+
+	if XPLOITS[num][0] == "computer" then 
+		
+		option = choseSmth(["1: Get passwords", "2: Get mails"], "Choose a option")
+
+		if option == 0 then	getPasswords(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]).host_computer)
+		if option == 1 then	getMails(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]).host_computer)
+	end if
+
+	if XPLOITS[num][0] == "number" then metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2], userInput)
+	if XPLOITS[num][0] == "file" then recursiveFunc(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]))
+
+	if XPLOITS[num][0] == "null" then 
+		res = metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2], userInput)
+		if typeof(res) == "file" then recursiveFunc(res)
+		if typeof(res) == "computer" then 
+		
+			option = choseSmth(["1: Get passwords", "2: Get mails"], "Choose a option")
+
+			if option == 0 then	getPasswords(res.host_computer)
+			if option == 1 then	getMails(res.host_computer)
+		end if
+
+		if typeof(res) == "shell" then connectToShell(res)
+	end if
+
+	actionFailed("Exploit failed")
+end function
+
+getPasswords = function(comp)
+shell = null
+pass = null
+passwords = []
+
+file = comp.File("/etc/passwd")
+if not file then exit(actionFailed("Could not find file at /etc/passwd"))
+	
+	
+cont = file.get_content
+if not cont and not file.has_permission("r")then exit(actionFailed("Could not get content of file because you have no reading permissions"))
+
+if not cont then exit(actionFailed("Could not get content of file"))
+
+pass = cont.split("\n")
+for obj in pass
+	passwords.push(pass)
+end for
+
+num = 1
+users = []
+output = []
+testBool = false
+for obj in passwords
+	for i in obj
+		for user in users
+			if user == i then testBool = true
+		end for
+
+		if testBool then
+			testBool = false
+			continue
+		end if
+		users.push(i)
+		if i != "" then output.push(num + ": " + i)
+		num = num + 1
+	end for
+end for
+
+if users.len < 1 then exit(actionFailed("Passwords couldnt get collected"))
+
+
+if get_shell.launch(current_path + "/decipher", users[option]) != 1 then exit(actionFailed("No decipher found in path: " + current_path + "/decipher"))
+
+end function
+
+getMails = function(comp)
+shell = null
+pass = null
+passwords = []
+
+		
+homeDir = comp.File("/home")
+if homeDir and homeDir.get_folders then 
+	userFolders = homeDir.get_folders()       
+	for userFolder in userFolders
+		mailcodesPath = userFolder.path + "/Config/Mail.txt"
+		mailFile = comp.File(mailcodesPath)
+		if not mailFile then continue //("Could not find file at /Config/Mail.txt")
+		cont = mailFile.get_content
+		if not cont then continue //("Could not get content of file")
+		passwords.push(cont)
+	end for
+end if
+
+
+num = 1
+users = []
+output = []
+testBool = false
+for i in passwords
+
+	for user in users
+		if user == i then testBool = true
+	end for
+
+	if testBool then
+		testBool = false
+		continue
+	end if
+
+	users.push(i)
+	output.push(num + ": " + i)
+	num = num + 1
+end for
+
+
+
+if passwords.len < 1 then exit(actionFailed("Emails couldnt get collected"))
+
+option = choseSmth(output, "Select a user: ") //Selecting
+print("\nUser: " + users[option].split(":")[0])
+
+if get_shell.launch(current_path + "/decipher", passwords[option]) != 1 then exit(actionFailed("No decipher found in path: " + current_path + "/decipher"))
+
+end function
+
+actionFailed = function(descriptionText = "No description set.")
+
+	colorPrefix = "<color=#FF0000df>"
+	suffix = "\n<b>Press any button to continue</b>" + "<mark=#FFFFFFa>"
+
+
+	print("<b>---------------------------------------</b>")
+	print (colorPrefix + descriptionText + suffix)
+	if user_input() then return startFunc()
+end function
+
+startFunc = function()
+	servicesListInfo = getInfo()
+	allLanDevices = servicesListInfo[0]
+	portInfo = servicesListInfo[1]
+	portList = servicesListInfo[2]
+
+	option = choseSmth(format_columns(portInfo).split("\n"), "", 1, format_columns(allLanDevices).split("\n"), true) //Selecting
+
+	if option == 0 then optionForRouter(allLanDevices, portInfo)
+	if option == 1 then optionForPorts(allLanDevices, portInfo, portList, option)
+		
+		
+end function
+
+startFunc()

@@ -11,7 +11,7 @@ cryptotoolsPath = "/root/crypto.so"
 cryptools = include_lib("/lib/crypto.so")
 if not cryptools then cryptools = include_lib(current_path + "/crypto.so")
 if not cryptools then aptClient.install("crypto.so", current_path)
-cryptools = include_lib(current_path + "/crypto.so")
+if not cryptools then cryptools = include_lib(current_path + "/crypto.so")
 if not cryptools then exit("Error: Missing crypto library")
 
 customObj = get_custom_object()
