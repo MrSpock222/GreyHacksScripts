@@ -42,7 +42,8 @@ for line in lines
 	password = GetPassword(userPass)
 	if not password then print("Can't find password :(")
 	if password then 
+		get_custom_object["succeeded"] = true
+		print("\nUser: " + userPass[0])
 		print("Password: " + "<color=red>" + password)
-		customObj["pass"] = password
 	end if
 end for

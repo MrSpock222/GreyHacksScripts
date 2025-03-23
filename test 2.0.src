@@ -5,7 +5,7 @@ end if
 
 dontUseCodesDebug = false
 useApt = false
-log = get_custom_object()
+logForInfo = get_custom_object()
 
 aptClient = include_lib("/lib/aptclient.so")
 if not aptClient then aptClient = include_lib(current_path + "/aptclient.so")
@@ -86,6 +86,7 @@ if typeof(ports) == "string" then exit(ports)
 if(ports.len == 0) then exit("Scan finished. No open ports found at " + params[0])
 
 //################################################SETUP ADDRESS################################################
+logForInfo["succeeded"] = false
 
 getMemCodes = function(typeOfCode, metaLib)
 	memory = null
@@ -402,8 +403,8 @@ optionForRouter = function(allLanDevices, portInfo)
 		option = choseSmth(["1: Connect", "2: Get passwords", "3: Get mails"], "Choose a option")
 
 		if option == 0 then	connectToShell(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]))
-		if option == 1 then	getPasswords(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]).host_computer)
-		if option == 2 then	getMails(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]).host_computer)
+		if option == 1 then getPasswords(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]).host_computer)
+		if option == 2 then getMails(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]).host_computer)
 	end if
 
 	if XPLOITS[num][0] == "computer" then metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2], userInput)
@@ -416,19 +417,24 @@ optionForRouter = function(allLanDevices, portInfo)
 		if typeof(res) == "file" then recursiveFunc(res)
 		if typeof(res) == "computer" then
 			option = choseSmth(["1: Get passwords", "2: Get mails"], "Choose a option")
-			if option == 0 then	getPasswords(res)
+			if option == 0 then getPasswords(res)
 			if option == 1 then	getMails(res)
 		end if
 		if typeof(res) == "shell" then connectToShell(res)
 	end if
 
-	actionFailed("Exploit failed")
+	if not logForInfo["succeeded"] then
+		actionEnded("Exploit failed!")
+	else
+		actionEnded("Exploit succedeed!")
+	end if
 end function
 
 optionForPorts = function(allLanDevices, portInfo, portList, option)
 	XPLOITS = []
 
 	port = portList[option]
+	print(port)
 	net_session = metaxploit.net_use(address, port)
 	if not net_session then exit("Error: can't connect to net session")
 	metaLib = net_session.dump_lib		
@@ -482,8 +488,8 @@ optionForPorts = function(allLanDevices, portInfo, portList, option)
 		
 		option = choseSmth(["1: Connect", "2: Get passwords", "3: Get mails"], "Choose a option")
 
-		if option == 0 then	connectToShell(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]))
-		if option == 1 then	getPasswords(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]).host_computer)
+		if option == 0 then connectToShell(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]))
+		if option == 1 then getPasswords(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]).host_computer)
 		if option == 2 then	getMails(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]).host_computer)
 	end if
 
@@ -491,8 +497,8 @@ optionForPorts = function(allLanDevices, portInfo, portList, option)
 		
 		option = choseSmth(["1: Get passwords", "2: Get mails"], "Choose a option")
 
-		if option == 0 then	getPasswords(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]))
-		if option == 1 then	getMails(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]))
+		if option == 0 then getPasswords(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]))
+		if option == 1 then getMails(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]))
 	end if
 
 	if XPLOITS[num][0] == "number" then metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2], userInput)
@@ -505,14 +511,18 @@ optionForPorts = function(allLanDevices, portInfo, portList, option)
 		
 			option = choseSmth(["1: Get passwords", "2: Get mails"], "Choose a option")
 
-			if option == 0 then	getPasswords(res)
-			if option == 1 then	getMails(res)
+			if option == 0 then getPasswords(res)
+			if option == 1 then getMails(res)
 		end if
 
 		if typeof(res) == "shell" then connectToShell(res)
 	end if
 
-	actionFailed("Exploit failed")
+	if not logForInfo["succeeded"] then
+		actionEnded("Exploit failed!")
+	else
+		actionEnded("Exploit succedeed!")
+	end if
 end function
 
 getPasswords = function(comp)
@@ -521,13 +531,13 @@ pass = null
 passwords = []
 
 file = comp.File("/etc/passwd")
-if not file then exit(actionFailed("Could not find file at /etc/passwd"))
+if not file then exit(actionEnded("Could not find file at /etc/passwd"))
 	
 	
 cont = file.get_content
-if not cont and not file.has_permission("r")then exit(actionFailed("Could not get content of file because you have no reading permissions"))
+if not cont and not file.has_permission("r")then exit(actionEnded("Could not get content of file because you have no reading permissions"))
 
-if not cont then exit(actionFailed("Could not get content of file"))
+if not cont then exit(actionEnded("Could not get content of file"))
 
 pass = cont.split("\n")
 for obj in pass
@@ -554,11 +564,12 @@ for obj in passwords
 	end for
 end for
 
-if users.len < 1 then exit(actionFailed("Passwords couldnt get collected"))
+if users.len < 1 then exit(actionEnded("Passwords couldnt get collected"))
 
 option = choseSmth(output, "Select a user: ") //Selecting
 
-if get_shell.launch(current_path + "/decipher", users[option]) != 1 then exit(actionFailed("No decipher found in path: " + current_path + "/decipher"))
+if get_shell.launch(current_path + "/decipher", users[option]) != 1 then exit(actionEnded("No decipher found in path: " + current_path + "/decipher"))
+
 
 end function
 
@@ -604,18 +615,25 @@ end for
 
 
 
-if passwords.len < 1 then exit(actionFailed("Emails couldnt get collected"))
+if passwords.len < 1 then exit(actionEnded("Emails couldnt get collected"))
 
 option = choseSmth(output, "Select a user: ") //Selecting
-print("\nUser: " + users[option].split(":")[0])
 
-if get_shell.launch(current_path + "/decipher", passwords[option]) != 1 then exit(actionFailed("No decipher found in path: " + current_path + "/decipher"))
+
+if get_shell.launch(current_path + "/decipher", passwords[option]) != 1 then exit(actionEnded("No decipher found in path: " + current_path + "/decipher"))
+
 
 end function
 
-actionFailed = function(descriptionText = "No description set.")
+actionEnded = function(descriptionText = "No description set.")
 
-	colorPrefix = "<color=#FF0000df>"
+	colorPrefixFailed = "<color=#FF0000df>"
+	colorPrefixSuccedeed = "<color=green>"
+
+	if logForInfo["succeeded"] then colorPrefix = colorPrefixSuccedeed 
+	if not logForInfo["succeeded"] then colorPrefix = colorPrefixFailed
+
+
 	suffix = "\n<b>Press any button to continue</b>" + "<mark=#FFFFFFa>"
 
 
@@ -625,6 +643,7 @@ actionFailed = function(descriptionText = "No description set.")
 end function
 
 startFunc = function()
+	logForInfo["succeeded"] = false
 	servicesListInfo = getInfo()
 	allLanDevices = servicesListInfo[0]
 	portInfo = servicesListInfo[1]
@@ -633,7 +652,7 @@ startFunc = function()
 	option = choseSmth(format_columns(portInfo).split("\n"), "", 1, format_columns(allLanDevices).split("\n"), true) //Selecting
 
 	if option == 0 then optionForRouter(allLanDevices, portInfo)
-	if option != 1 then optionForPorts(allLanDevices, portInfo, portList, option)
+	if option != 0 then optionForPorts(allLanDevices, portInfo, portList, option)
 		
 		
 end function
