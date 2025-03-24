@@ -421,7 +421,7 @@ setup = function()
 	if ports == null then exit("nmap: ip address not found")
 	if typeof(ports) == "string" then exit(ports)
 
-	return [router, ports]
+	return [router, ports, isLanIp]
 end function
 
 getInfo = function()
@@ -429,6 +429,7 @@ getInfo = function()
 	values = setup()
 	router = values[0]
 	ports = values[1]
+	isLanIp = values[2]
 	portIndex = 1
 	portInfo = ""
 	allLanDevices = ""
