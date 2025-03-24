@@ -15,15 +15,16 @@ if not aptClient and useApt then exit("There is no aptclient.so at " + current_p
 repoIP = "78.194.123.64"
 if useApt then
 	aptClient.add_repo(repoIP)
-	aptClient.update()
 end if
+
+if params[0] == "-u" or params[0] == "-U" then exit(aptClient.update())
 
 codesFileName = "codes.txt"
 codesPath = "/server/aptfiles"
 
 if params[0] == "getLan" then
 	result = aptClient.install("ScanLan.exe", current_path)
-	if result == 1 then 
+	if result == 1 then
 		exit("Installation of ScanLan.exe was succsessful!")
 	else
 		exit("Installation of ScanLan.exe failed!")
@@ -42,7 +43,7 @@ if params[0] == "cleanup" then
 		if result != "" then print(colorPrefix + fileName + " " + result)
 	end for
 
-	
+
 	emptyRow = "\n" + colorPrefix + "<b>-------------------------------------------------------</b>\n"
 	portInfo = colorPrefix + "<b>Make sure to empty the logs, since deleting files will leave a log entry!</b>"
 	exit(emptyRow + portInfo + emptyRow)
@@ -69,7 +70,7 @@ getMemCodes = function(typeOfCode, metaLib)
 	if dontUseCodesDebug then return metaxploit.scan(metaLib)
 
 	if useApt then
-		if serverShell.host_computer.File(codesPath + "/" + codesFileName) == null then 
+		if serverShell.host_computer.File(codesPath + "/" + codesFileName) == null then
 			hostComputer = serverShell.host_computer
 			createResult = hostComputer.touch(codesPath, codesFileName)
 			if typeof(createResult) == "number" then
@@ -79,7 +80,7 @@ getMemCodes = function(typeOfCode, metaLib)
 			end if
 		end if
 	else
-		if get_shell.host_computer.File(current_path + "/" + codesFileName) == null then 
+		if get_shell.host_computer.File(current_path + "/" + codesFileName) == null then
 			hostComputer = get_shell.host_computer
 			createResult = hostComputer.touch(current_path, codesFileName)
 			if typeof(createResult) == "number" then
@@ -111,7 +112,7 @@ getMemCodes = function(typeOfCode, metaLib)
 		toWriteMem = " " + memory
 
 		if useApt then serverShell.host_computer.File(codesPath + "/" + codesFileName).set_content(serverShell.host_computer.File(codesPath + "/" + codesFileName).get_content + typeOfCode + toWriteMem + ":")
-		if not useApt then get_shell.host_computer.File(current_path + "/" + codesFileName).set_content(get_shell.host_computer.File(current_path + "/" + codesFileName).get_content + typeOfCode + toWriteMem + ":")	
+		if not useApt then get_shell.host_computer.File(current_path + "/" + codesFileName).set_content(get_shell.host_computer.File(current_path + "/" + codesFileName).get_content + typeOfCode + toWriteMem + ":")
 	end if
 
 	return memory
@@ -149,7 +150,7 @@ choseSmth = function(listOfVariables = ["option 1"], descriptionText = "No descr
 			print(variables)
 		end for
 	else
-		while (true)	
+		while (true)
 
 			clear_screen()
 			print (descriptionText)
@@ -180,14 +181,14 @@ choseSmth = function(listOfVariables = ["option 1"], descriptionText = "No descr
 
 			key = user_input("Press Up or Down arrow Key", false, true)
 
-			if (key == "DownArrow") or (key == "s") then 
+			if (key == "DownArrow") or (key == "s") then
 				num = num + 1
 				if num > listOfVariables.len - 1 then num = 0
-			else if (key == "UpArrow") or (key == "w") then 
+			else if (key == "UpArrow") or (key == "w") then
 				num = num - 1
 				if num < 0 then num = listOfVariables.len - 1
 			else
-				clear_screen()		
+				clear_screen()
 				print("You chose: " + (num + 1))
 				return num
 			end if
@@ -200,7 +201,7 @@ connectToShell = function(targetShell)
 	while(true)
 		option = user_input("Do you want to copy test:", false, false)
 		option = option.trim
-		if option == "Y" or option == "y" or option == "N" or option == "n" then 
+		if option == "Y" or option == "y" or option == "N" or option == "n" then
 			break
 		end if
 	end while
@@ -208,15 +209,17 @@ connectToShell = function(targetShell)
 	if option == "Y" or option == "y" then
 		currentShell = get_shell
 		testScript = launch_path
+
 		username = targetShell.launch("/bin/whoami")
-		if username != "root" then res = targetShell.scp(testScript, "/home/" + username, currentShell)
-		if username == "root" then res = targetShell.scp(testScript, "/home/root", currentShell)
-		print(res)
+		if username != "root" then targetShell.scp(testScript, "/home/" + username, currentShell)
+		if username == "root" then targetShell.scp(testScript, "/home/root", currentShell)
+
 	end if
 
 
 	logForInfo["succeeded"] = true
-	targetShell.start_terminal 
+	clear_screen()
+	targetShell.start_terminal
 end function
 
 getPasswords = function(comp, skip = false)
@@ -228,8 +231,8 @@ passwords = []
 if typeof(comp) == "file" then file = comp
 if typeof(comp) == "computer" then file = comp.File("/etc/passwd")
 if not file then exit(actionEnded("Could not find file at /etc/passwd"))
-	
-	
+
+
 cont = file.get_content
 if not cont and not file.has_permission("r")then exit(actionEnded("Could not get content of file because you have no reading permissions"))
 
@@ -268,7 +271,7 @@ option = choseSmth(output, "Select a user: ") //Selecting
 if option == users.len then return
 
 if get_shell.launch(current_path + "/decipher", users[option]) != 1 then exit(actionEnded("No decipher found in path: " + current_path + "/decipher"))
-logForInfo["succeeded"] = true 
+logForInfo["succeeded"] = true
 end function
 
 getMails = function(comp, skip = false)
@@ -279,10 +282,10 @@ passwords = []
 
 if typeof(comp) == "file" then passwords.push(comp.get_content)
 
-if typeof(comp) == "computer" then 
+if typeof(comp) == "computer" then
 	homeDir = comp.File("/home")
-	if homeDir and homeDir.get_folders then 
-		userFolders = homeDir.get_folders()       
+	if homeDir and homeDir.get_folders then
+		userFolders = homeDir.get_folders()
 		for userFolder in userFolders
 			mailcodesPath = userFolder.path + "/Config/Mail.txt"
 			mailFile = comp.File(mailcodesPath)
@@ -333,13 +336,13 @@ usersString = ""
 
 recursiveFunc = function(input, counter = 1,passwords = true, symbol = "L")
 
-	if counter == 1 then 
+	if counter == 1 then
 		while (input.path != "/")
 			input = input.parent
 		end while
 	end if
 
-	if not input.is_folder then 
+	if not input.is_folder then
 		fileName = input.name
 
 		fileName = fileName.insert(0, symbol)
@@ -347,10 +350,10 @@ recursiveFunc = function(input, counter = 1,passwords = true, symbol = "L")
 			fileName = fileName.insert(0," ")
 		end for
 	else
-	
+
 		for dir in input.get_folders
 			fileName = dir.name
-		
+
 			fileName = fileName.insert(0, symbol)
 			for c in range(counter)
 				fileName = fileName.insert(0," ")
@@ -366,7 +369,7 @@ recursiveFunc = function(input, counter = 1,passwords = true, symbol = "L")
 					fileName = fileName.insert(0," ")
 				end for
 
-				if file.has_permission("r") then 
+				if file.has_permission("r") then
 					if passwords and file.name == "passwd" then getPasswords(file, true)
 					if not passwords and file.name == "Mail.txt" then getMails(file, true)
 				end if
@@ -387,7 +390,7 @@ recursiveFunc = function(input, counter = 1,passwords = true, symbol = "L")
 				fileName = fileName.insert(0," ")
 			end for
 
-			if file.has_permission("r") then 
+			if file.has_permission("r") then
 				if passwords and file.name == "passwd" then getPasswords(file, true)
 				if not passwords and file.name == "Mail.txt" then getMails(file, true)
 			else
@@ -450,7 +453,7 @@ getInfo = function()
 		if(port.is_closed and not isLanIp) then
 			port_status = "closed"
 		end if
-		
+
 		portInfo = portInfo + "\n" + portIndex + " " + port.port_number + " " + port_status + " " + service_info + " " + lan_ips
 		pr.push(port.port_number)
 		portIndex = portIndex + 1
@@ -488,7 +491,7 @@ optionForRouter = function(allLanDevices, portInfo)
 			if add == address[0] then continue
 			value = add[add.indexOf("<b>") + 3 : add.indexOf("</b>")]
 			value = value.replace("\n", "")
-			result = metaLib.overflow(mem, value)	
+			result = metaLib.overflow(mem, value)
 			//if typeof(result) != "null" then
 				XPLOITS.push([typeof(result), mem, value])
 			//end if
@@ -502,10 +505,10 @@ optionForRouter = function(allLanDevices, portInfo)
 	counter = 1
 	for xploit in XPLOITS
 		print("<color=blue>" + "<b>----------------------------------------------------</b>")
-		result = metaLib.overflow(xploit[1], xploit[2])	
-		if typeof(result) != "computer" and typeof(result) != "null" then print(counter + ": " + "Type: " + "<B>" + "<color=orange>" + typeof(result) + "</b>" + "</color>" +" at memcode: " + "<color=red>" + "<B>" + xploit[1] + "</b>")	
-		if typeof(result) == "null" then print(counter + ": " + "Type: " + "<B>" + "<color=red>" + typeof(result) + "</b>" + "</color>" +" at memcode: " + "<color=red>" + "<B>" + xploit[1] + "</b>")	
-		if typeof(result) == "computer" then print(counter + ": " + "Type: " + "<B>" + "<color=orange>" + "computer:" + "<color=#00F7FF>" + "bounce" + "</b>" + "</color>" +" at memcode: " + "<color=red>" + "<B>" + xploit[1] + "</b>")	
+		result = metaLib.overflow(xploit[1], xploit[2])
+		if typeof(result) != "computer" and typeof(result) != "null" then print(counter + ": " + "Type: " + "<B>" + "<color=orange>" + typeof(result) + "</b>" + "</color>" +" at memcode: " + "<color=red>" + "<B>" + xploit[1] + "</b>")
+		if typeof(result) == "null" then print(counter + ": " + "Type: " + "<B>" + "<color=red>" + typeof(result) + "</b>" + "</color>" +" at memcode: " + "<color=red>" + "<B>" + xploit[1] + "</b>")
+		if typeof(result) == "computer" then print(counter + ": " + "Type: " + "<B>" + "<color=orange>" + "computer:" + "<color=#00F7FF>" + "bounce" + "</b>" + "</color>" +" at memcode: " + "<color=red>" + "<B>" + xploit[1] + "</b>")
 		counter = counter + 1
 	end for
 
@@ -513,11 +516,11 @@ optionForRouter = function(allLanDevices, portInfo)
 	num = 0
 	while(true)
 		option = user_input("Choose a vulnerability:", false, false)
-		if option.trim.to_int <= XPLOITS.len and option.trim.to_int >= 1 then 
+		if option.trim.to_int <= XPLOITS.len and option.trim.to_int >= 1 then
 			num = option.trim.to_int - 1
 			break
 		end if
-		if option.trim == "" then 
+		if option.trim == "" then
 			exit(startFunc())
 			break
 		end if
@@ -528,8 +531,8 @@ optionForRouter = function(allLanDevices, portInfo)
 
 	clear_screen()
 
-	if XPLOITS[num][0] == "shell" then 
-		
+	if XPLOITS[num][0] == "shell" then
+
 		option = choseSmth(["1: Connect", "2: Get passwords", "3: Get mails"], "Choose a option")
 
 		if option == 0 then	connectToShell(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]))
@@ -537,30 +540,30 @@ optionForRouter = function(allLanDevices, portInfo)
 		if option == 2 then getMails(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]).host_computer)
 	end if
 
-	if XPLOITS[num][0] == "computer" then 
+	if XPLOITS[num][0] == "computer" then
 		metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2], userInput)
 		logForInfo["succeeded"] = true
 	end if
 
-	if XPLOITS[num][0] == "number" then 
+	if XPLOITS[num][0] == "number" then
 		res = metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2], userInput)
 		logForInfo["succeeded"] = true
 	end if
 
-	if XPLOITS[num][0] == "file" then 
+	if XPLOITS[num][0] == "file" then
 		option = choseSmth(["1: Get passwords", "2: Get mails"], "Choose a option")
 
 		if option == 0 then recursiveFunc(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]), 1, true)
 		if option == 1 then	recursiveFunc(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]), 1, false)
 		logForInfo["succeeded"] = true
 	end if
-		
-		
 
 
-	if XPLOITS[num][0] == "null" then 
+
+
+	if XPLOITS[num][0] == "null" then
 		res = metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2], userInput)
-		if typeof(res) == "file" then 
+		if typeof(res) == "file" then
 			option = choseSmth(["1: Get passwords", "2: Get mails"], "Choose a option")
 			if option == 0 then recursiveFunc((res), 1, true)
 			if option == 1 then	recursiveFunc((res), 1, false)
@@ -589,7 +592,7 @@ optionForPorts = function(allLanDevices, portInfo, portList, option)
 	address = params[0]
 	net_session = metaxploit.net_use(address, port)
 	if not net_session then exit("Error: can't connect to net session")
-	metaLib = net_session.dump_lib		
+	metaLib = net_session.dump_lib
 	typeOfCode = metaLib.lib_name + " " + metaLib.version
 	memory = getMemCodes(typeOfCode, metaLib)
 	clear_screen()
@@ -602,8 +605,8 @@ optionForPorts = function(allLanDevices, portInfo, portList, option)
 			if add == address[0] then continue
 			value = add[add.indexOf("<b>") + 3 : add.indexOf("</b>")]
 			value = value.replace("\n", "")
-			result = metaLib.overflow(mem, value)	
-			//if typeof(result) != "null" then 
+			result = metaLib.overflow(mem, value)
+			//if typeof(result) != "null" then
 				XPLOITS.push([typeof(result), mem, value])
 			//end if
 		end for
@@ -616,16 +619,16 @@ optionForPorts = function(allLanDevices, portInfo, portList, option)
 	counter = 1
 	for xploit in XPLOITS
 		print("<color=blue>" + "<b>----------------------------------------------------</b>")
-		result = metaLib.overflow(xploit[1], xploit[2])	
-		if typeof(result) != "null" then print(counter + ": " + "Type: " + "<B>" + "<color=orange>" + typeof(result) + "</b>" + "</color>" +" at memcode: " + "<color=red>" + "<B>" + xploit[1] + "</b>")	
-		if typeof(result) == "null" then print(counter + ": " + "Type: " + "<B>" + "<color=red>" + typeof(result) + "</b>" + "</color>" +" at memcode: " + "<color=red>" + "<B>" + xploit[1] + "</b>")	
+		result = metaLib.overflow(xploit[1], xploit[2])
+		if typeof(result) != "null" then print(counter + ": " + "Type: " + "<B>" + "<color=orange>" + typeof(result) + "</b>" + "</color>" +" at memcode: " + "<color=red>" + "<B>" + xploit[1] + "</b>")
+		if typeof(result) == "null" then print(counter + ": " + "Type: " + "<B>" + "<color=red>" + typeof(result) + "</b>" + "</color>" +" at memcode: " + "<color=red>" + "<B>" + xploit[1] + "</b>")
 		counter = counter + 1
 	end for
 
 	num = 0
 	while(true)
 		option = user_input("Choose a vulnerability:", false, false)
-		if option.trim.to_int <= XPLOITS.len and option.trim.to_int >= 1 then 
+		if option.trim.to_int <= XPLOITS.len and option.trim.to_int >= 1 then
 			num = option.trim.to_int - 1
 			break
 		end if
@@ -636,8 +639,8 @@ optionForPorts = function(allLanDevices, portInfo, portList, option)
 
 	clear_screen()
 
-	if XPLOITS[num][0] == "shell" then 
-		
+	if XPLOITS[num][0] == "shell" then
+
 		option = choseSmth(["1: Connect", "2: Get passwords", "3: Get mails"], "Choose a option")
 
 		if option == 0 then connectToShell(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]))
@@ -645,8 +648,8 @@ optionForPorts = function(allLanDevices, portInfo, portList, option)
 		if option == 2 then	getMails(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]).host_computer)
 	end if
 
-	if XPLOITS[num][0] == "computer" then 
-		
+	if XPLOITS[num][0] == "computer" then
+
 		option = choseSmth(["1: Get passwords", "2: Get mails"], "Choose a option")
 
 		if option == 0 then getPasswords(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]))
@@ -654,33 +657,33 @@ optionForPorts = function(allLanDevices, portInfo, portList, option)
 		logForInfo["succeeded"] = true
 	end if
 
-	if XPLOITS[num][0] == "number" then 
+	if XPLOITS[num][0] == "number" then
 		metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2], userInput)
 		logForInfo["succeeded"] = true
 	end if
-	if XPLOITS[num][0] == "file" then 
+	if XPLOITS[num][0] == "file" then
 		option = choseSmth(["1: Get passwords", "2: Get mails"], "Choose a option")
 
 		if option == 0 then recursiveFunc(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]), 1, true)
 		if option == 1 then recursiveFunc(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]), 1, false)
 		logForInfo["succeeded"] = true
 	end if
-		
 
-	if XPLOITS[num][0] == "null" then 
+
+	if XPLOITS[num][0] == "null" then
 		res = metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2], userInput)
-		if typeof(res) == "file" then 
+		if typeof(res) == "file" then
 			option = choseSmth(["1: Get passwords", "2: Get mails"], "Choose a option")
 
 			if option == 0 then recursiveFunc(res, 1, true)
 			if option == 1 then recursiveFunc(res, 1, false)
 			logForInfo["succeeded"] = true
 	end if
-			
-			
-			
-		if typeof(res) == "computer" then 
-		
+
+
+
+		if typeof(res) == "computer" then
+
 			option = choseSmth(["1: Get passwords", "2: Get mails"], "Choose a option")
 
 			if option == 0 then getPasswords(res)
@@ -709,18 +712,18 @@ testLibary = function()
 		lipPaths.push(file.path)
 	end for
 
-	if option == 0 then 
+	if option == 0 then
 		ress = choseSmth(libs, "Choose a lib", 1)
 		metaLib = metaxploit.load(lipPaths[ress])
 	end if
 
-	if option == 1 then 
+	if option == 1 then
 		ress = user_input("Type path: ", false, false)
 		metaLib = metaxploit.load(ress)
 	end if
 
 
-		
+
 	typeOfCode = metaLib.lib_name + " " + metaLib.version
 	memory = getMemCodes(typeOfCode, metaLib)
 	clear_screen()
@@ -733,8 +736,8 @@ testLibary = function()
 			if add == address[0] then continue
 			value = add[add.indexOf("<b>") + 3 : add.indexOf("</b>")]
 			value = value.replace("\n", "")
-			result = metaLib.overflow(mem, value)	
-			//if typeof(result) != "null" then 
+			result = metaLib.overflow(mem, value)
+			//if typeof(result) != "null" then
 				XPLOITS.push([typeof(result), mem, value])
 			//end if
 		end for
@@ -745,9 +748,9 @@ testLibary = function()
 	counter = 1
 	for xploit in XPLOITS
 		print("<color=blue>" + "<b>----------------------------------------------------</b>")
-		result = metaLib.overflow(xploit[1], xploit[2])	
-		if typeof(result) != "null" then print(counter + ": " + "Type: " + "<B>" + "<color=orange>" + typeof(result) + "</b>" + "</color>" +" at memcode: " + "<color=red>" + "<B>" + xploit[1] + "</b>")	
-		if typeof(result) == "null" then print(counter + ": " + "Type: " + "<B>" + "<color=red>" + typeof(result) + "</b>" + "</color>" +" at memcode: " + "<color=red>" + "<B>" + xploit[1] + "</b>")	
+		result = metaLib.overflow(xploit[1], xploit[2])
+		if typeof(result) != "null" then print(counter + ": " + "Type: " + "<B>" + "<color=orange>" + typeof(result) + "</b>" + "</color>" +" at memcode: " + "<color=red>" + "<B>" + xploit[1] + "</b>")
+		if typeof(result) == "null" then print(counter + ": " + "Type: " + "<B>" + "<color=red>" + typeof(result) + "</b>" + "</color>" +" at memcode: " + "<color=red>" + "<B>" + xploit[1] + "</b>")
 		counter = counter + 1
 	end for
 
@@ -755,7 +758,7 @@ testLibary = function()
 	num = 0
 	while(true)
 		option = user_input("Choose a vulnerability:", false, false)
-		if option.trim.to_int <= XPLOITS.len and option.trim.to_int >= 1 then 
+		if option.trim.to_int <= XPLOITS.len and option.trim.to_int >= 1 then
 			num = option.trim.to_int - 1
 			break
 		end if
@@ -766,8 +769,8 @@ testLibary = function()
 
 	clear_screen()
 
-	if XPLOITS[num][0] == "shell" then 
-		
+	if XPLOITS[num][0] == "shell" then
+
 		option = choseSmth(["1: Connect", "2: Get passwords", "3: Get mails"], "Choose a option")
 
 		if option == 0 then connectToShell(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]))
@@ -775,41 +778,41 @@ testLibary = function()
 		if option == 2 then	getMails(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]).host_computer)
 	end if
 
-	if XPLOITS[num][0] == "computer" then 
-		
+	if XPLOITS[num][0] == "computer" then
+
 		option = choseSmth(["1: Get passwords", "2: Get mails"], "Choose a option")
 
 		if option == 0 then getPasswords(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]))
 		if option == 1 then getMails(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]))
 	end if
 
-	if XPLOITS[num][0] == "number" then 
+	if XPLOITS[num][0] == "number" then
 		metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2], userInput)
 		logForInfo["succeeded"] = true
 	end if
-	if XPLOITS[num][0] == "file" then 
+	if XPLOITS[num][0] == "file" then
 		option = choseSmth(["1: Get passwords", "2: Get mails"], "Choose a option")
 
 		if option == 0 then recursiveFunc(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]), 1, true)
 		if option == 1 then recursiveFunc(metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2]), 1, false)
 		logForInfo["succeeded"] = true
 	end if
-		
 
-	if XPLOITS[num][0] == "null" then 
+
+	if XPLOITS[num][0] == "null" then
 		res = metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2], userInput)
-		if typeof(res) == "file" then 
+		if typeof(res) == "file" then
 			option = choseSmth(["1: Get passwords", "2: Get mails"], "Choose a option")
 
 			if option == 0 then recursiveFunc(res, 1, true)
 			if option == 1 then recursiveFunc(res, 1, false)
 			logForInfo["succeeded"] = true
 		end if
-			
-			
-			
-		if typeof(res) == "computer" then 
-		
+
+
+
+		if typeof(res) == "computer" then
+
 			option = choseSmth(["1: Get passwords", "2: Get mails"], "Choose a option")
 
 			if option == 0 then getPasswords(res)
@@ -831,7 +834,7 @@ actionEnded = function(descriptionText = "No description set.")
 	colorPrefixFailed = "<color=#FF0000df>"
 	colorPrefixSuccedeed = "<color=green>"
 
-	if logForInfo["succeeded"] then colorPrefix = colorPrefixSuccedeed 
+	if logForInfo["succeeded"] then colorPrefix = colorPrefixSuccedeed
 	if not logForInfo["succeeded"] then colorPrefix = colorPrefixFailed
 
 
@@ -854,8 +857,8 @@ startFunc = function()
 
 	if option == 0 then optionForRouter(allLanDevices, portInfo)
 	if option != 0 then optionForPorts(allLanDevices, portInfo, portList, option)
-		
-		
+
+
 end function
 
 
