@@ -586,6 +586,7 @@ optionForPorts = function(allLanDevices, portInfo, portList, option)
 	XPLOITS = []
 
 	port = portList[option]
+	address = params[0]
 	net_session = metaxploit.net_use(address, port)
 	if not net_session then exit("Error: can't connect to net session")
 	metaLib = net_session.dump_lib		
