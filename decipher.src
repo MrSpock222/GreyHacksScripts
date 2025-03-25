@@ -1,16 +1,22 @@
-// command: decipher
-aptClient = include_lib("/lib/aptclient.so")
-if not aptClient then include_lib(current_path + "/aptclient.so")
-if not aptClient then exit("There is no aptclient.so at " + current_path + " or /lib!")
+package = @get_custom_object
 
-repoIP = "78.194.123.64"
-aptClient.add_repo(repoIP)
 
+if package.useApt then 
+	aptClient = include_lib("/lib/aptclient.so")
+	if not aptClient then include_lib(current_path + "/aptclient.so")
+	if not aptClient then exit("There is no aptclient.so at " + current_path + " or /lib!")
+	aptClient.add_repo(package.repoIP)
+end if
 
 cryptotoolsPath = "/root/crypto.so"
 cryptools = include_lib("/lib/crypto.so")
 if not cryptools then cryptools = include_lib(current_path + "/crypto.so")
-if not cryptools then aptClient.install("crypto.so", current_path)
+
+if not cryptools and package.useApt then
+	print("Installing crypto.so...")
+	aptClient.install("crypto.so", current_path)
+end if
+
 if not cryptools then cryptools = include_lib(current_path + "/crypto.so")
 if not cryptools then exit("Error: Missing crypto library")
 

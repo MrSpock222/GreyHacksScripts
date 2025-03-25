@@ -18,7 +18,6 @@ if useApt then
 end if
 
 if params[0] == "-u" or params[0] == "-U" then exit(aptClient.update())
-
 codesFileName = "codes.txt"
 codesPath = "/server/aptfiles"
 
@@ -713,7 +712,7 @@ testLibary = function()
 	end for
 
 	if option == 0 then
-		ress = choseSmth(libs, "Choose a lib", 1)
+		ress = choseSmth(libs, "Choose a lib")
 		metaLib = metaxploit.load(lipPaths[ress])
 	end if
 
