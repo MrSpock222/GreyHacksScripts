@@ -431,13 +431,38 @@ MainFuncsForCode.actionended = function(descriptionText = "No description set.")
 	print (colorPrefix + descriptionText + suffix)
 	user_input()
 end function
+
+MainFuncsForCode.scanalllibs = function
+
+	if get_shell.host_computer.File(current_path + "/scanlibs") == null then return print("Folder: " + current_path + "/scanlibs" + " is not existing.\nUse lib -s first.")
+	if get_shell.host_computer.File(current_path + "/scanlibs").get_files.len < 1 then return print("There is nothing to scan.")
+
+	print("Scanning all libs in " + current_path + "/scanlibs")
+	for file in get_shell.host_computer.File(current_path + "/scanlibs").get_files
+		metaLib = CurrentShell.metaxploit.load(file.path)
+		typeOfCode = metaLib.lib_name + " " + metaLib.version
+		print("Scanning: " + metaLib.lib_name + " " + metaLib.version)
+		MainFuncsForCode.getmemcodes(typeOfCode, metaLib)
+	end for
+end function
+
+MainFuncsForCode.sendlibstoserver = function()
+
+	if CurrentShell.shell.host_computer.File("/root/scanlibs") == null then
+		CurrentShell.shell.host_computer.create_folder("/root", "scanlibs")
+	end if
+
+	for file in get_shell.host_computer.File("/lib").get_files
+		__shell.scp(file.path,"/root/scanlibs",CurrentShell.shell)
+	end for
+	
+end function
 	
 
 Menu = {}
 Menu.init = function()
-
-		print "\n<align=""center"">Hacking Tool" + char(169) + "</align>\n<align=""center""><size=50px>TEST</size></align>\n<align=""center"">" + "by" + " Notschge</align>\n"
-		print "Initializing..."
+	print "\n<align=""center"">Hacking Tool" + char(169) + "</align>\n<align=""center""><size=50px>TEST</size></align>\n<align=""center"">" + "by" + " Notschge</align>\n"
+	print "Initializing..."
 
 
 	if package.useApt then 
@@ -475,8 +500,8 @@ Menu.init = function()
 
 	mainFuncs = {}
 	mainFuncs.scan = {}
-	mainFuncs.scan.use = "Usage: scan"
-	mainFuncs.scan.description = "Scan for ports at desired IP"
+	mainFuncs.scan.use = "Usage: scan [IPADDRESS]"
+	mainFuncs.scan.description = "Scan for ports at desired IP."
 	mainFuncs.scan.run = function(x)
 		XPLOITS = []
 		package.wasSuccessfull = false
@@ -764,7 +789,7 @@ Menu.init = function()
 
 	mainFuncs.cleanup = {}
 	mainFuncs.cleanup.use = "Usage: cleanup"
-	mainFuncs.cleanup.description = "Deletes all files in the folder, the script is run at"
+	mainFuncs.cleanup.description = "Deletes all files in the folder, the script is run at."
 	mainFuncs.cleanup.run = function(x)
 		currentFolder = get_shell.host_computer.File(current_path)
 		colorPrefix = "<color=#FF0000df>"
@@ -785,7 +810,7 @@ Menu.init = function()
 
 	mainFuncs.getlan = {}
 	mainFuncs.getlan.use = "Usage: getLan"
-	mainFuncs.getlan.description = "Installs ScanLan.exe at the current folder which the script is run at"
+	mainFuncs.getlan.description = "Installs ScanLan.exe at the current folder which the script is run at."
 	mainFuncs.getlan.run = function(x)
 		result = CurrentShell.aptclient.install("ScanLan.exe", current_path)
 		if result == 1 then
@@ -796,14 +821,18 @@ Menu.init = function()
 	end function
 
 	mainFuncs.lib = {}
-	mainFuncs.lib.use = "Usage: lib"
-	mainFuncs.lib.description = "Scan the desired libary for vulnerabilities"
+	mainFuncs.lib.use = "Usage: lib <send/scan>"
+	mainFuncs.lib.description = "Scan the desired libary for vulnerabilities.\nsend: sends all libs to server\nscan scans all libs (use on server)."
 	mainFuncs.lib.run = function(x)
+
+		if x[0] == "send" then return MainFuncsForCode.sendlibstoserver
+		if x[0] == "scan" then return MainFuncsForCode.scanalllibs
+
 		XPLOITS = []
 		libs = []
 		lipPaths = []
 
-		option = MainFuncsForCode.chosesmth(["Scan lib folder", "Select path manually"], "Choose:")
+		option = MainFuncsForCode.chosesmth(["Select libary", "Select libary manually (Path)"], "Choose:")
 
 		for file in get_shell.host_computer.File("/lib").get_files
 			libs.push(file.name)
@@ -821,7 +850,7 @@ Menu.init = function()
 		end if
 
 
-
+		
 		typeOfCode = metaLib.lib_name + " " + metaLib.version
 		memory = MainFuncsForCode.getmemcodes(typeOfCode, metaLib)
 		clear_screen()
