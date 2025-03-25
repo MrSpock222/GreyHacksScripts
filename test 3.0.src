@@ -453,6 +453,9 @@ MainFuncsForCode.sendlibstoserver = function()
 	end if
 
 	for file in get_shell.host_computer.File("/lib").get_files
+		print("<color=#00AEFF>---------------------------------------")
+		if file.has_permission("r") then print("Sending " + file.name + " to server...")
+		if not file.has_permission("r") then print("<color=red>No permission to send " + file.name + " to server\n<color=red>" + active_user + "has no permissions to read file.")
 		__shell.scp(file.path,"/root/scanlibs",CurrentShell.shell)
 	end for
 	
@@ -818,6 +821,15 @@ Menu.init = function()
 		else
 			print("Installation of ScanLan.exe failed!")
 		end if
+	end function
+
+	mainFuncs.log = {}
+	mainFuncs.log.use = "Usage: log"
+	mainFuncs.log.description = "Corrupts log file"
+	mainFuncs.log.run = function(x)
+		__computer.File("/var/system.log").move("/","system.log")
+		__computer.touch("/var", "system.log")
+		exit()
 	end function
 
 	mainFuncs.lib = {}
