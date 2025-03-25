@@ -433,12 +433,13 @@ MainFuncsForCode.actionended = function(descriptionText = "No description set.")
 end function
 
 MainFuncsForCode.scanalllibs = function
-
-	if get_shell.host_computer.File(current_path + "/scanlibs") == null then return print("Folder: " + current_path + "/scanlibs" + " is not existing.\nUse lib -s first.")
-	if get_shell.host_computer.File(current_path + "/scanlibs").get_files.len < 1 then return print("There is nothing to scan.")
+	
+	foldertoscan = get_shell.host_computer.File(current_path + "/scanlibs")
+	if foldertoscan == null then foldertoscan = get_shell.host_computer.File("/lib")
+	if foldertoscan.get_files.len < 1 then return print("There is nothing to scan.")
 
 	print("Scanning all libs in " + current_path + "/scanlibs")
-	for file in get_shell.host_computer.File(current_path + "/scanlibs").get_files
+	for file in foldertoscan.get_files
 		metaLib = CurrentShell.metaxploit.load(file.path)
 		typeOfCode = metaLib.lib_name + " " + metaLib.version
 		print("Scanning: " + metaLib.lib_name + " " + metaLib.version)
@@ -447,6 +448,8 @@ MainFuncsForCode.scanalllibs = function
 end function
 
 MainFuncsForCode.sendlibstoserver = function()
+
+	if CurrentShell.aptclient == null then return print("<color=red>Apt client not reachable")
 
 	if CurrentShell.shell.host_computer.File("/root/scanlibs") == null then
 		CurrentShell.shell.host_computer.create_folder("/root", "scanlibs")
