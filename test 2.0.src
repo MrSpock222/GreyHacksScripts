@@ -406,7 +406,7 @@ setup = function()
 	isLanIp = is_lan_ip( address )
 
 	if isLanIp then
-	router = get_router;
+	router = get_router
 	else
 	router = get_router( address )
 	end if

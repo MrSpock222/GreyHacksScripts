@@ -22,7 +22,7 @@ CurrentShell.aptclient = null
 
 Target = {}
 Target.router = null
-Target.address = null
+Target.address = ""
 Target.files = {}
 Target.files.files = []
 Target.files.folders = []
@@ -514,25 +514,25 @@ Menu.init = function()
 		portIndex = 1
 		portInfo = ""
 		allLanDevices = ""
+		ports = null
 		pr = []
 
 		if not is_valid_ip(Target.address) then Target.address = x[0]
 
-		isLanIp = is_lan_ip( Target.address )
+		isLanIp = is_lan_ip(Target.address)
 
 		if isLanIp then
-			Target.router = get_router;
+			Target.router = get_router
 		else
 			Target.router = get_router( Target.address )
 		end if
 
 		if Target.router == null then return print("nmap: ip address not found")
-		ports = null
 
 		if not isLanIp then
 			ports = Target.router.used_ports
 		else
-		ports = Target.router.device_ports(Target.address)
+			ports = Target.router.device_ports(Target.address)
 		end if
 
 		if ports == null then return print("nmap: ip address not found")
@@ -1007,6 +1007,11 @@ end function
 
 Menu.CommandHandler = function(command)
 	command = command.split(" ")
+
+	for a in range(command.len - 1)
+		if command[a] == "" then command.remove(command.indexOf(""))
+	end for
+
 	if self.cmd.hasIndex(command[0].lower) then 
 		f = @self.cmd[command[0].lower].run
 		if command.len > 1 then f(command[1:]) else f
