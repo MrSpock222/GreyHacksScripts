@@ -103,7 +103,7 @@ File.create = function(name, path, type, content, object)
 	x.name = name
 	x.path = path
 	x.type = type
-	x.content = contents
+	x.content = content
 	x.object = object
 	return x
 end function
