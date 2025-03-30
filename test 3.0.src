@@ -36,7 +36,7 @@ Current.aptclient = null
 Current.crypt = null
 wasSuccessfull = false
 
-DEBUG = true
+DEBUG = false
 if DEBUG then
 	Current.metaxploit = include_lib("/lib/metaxploit.so")
 	Current.crypt = include_lib("/lib/crypto.so")
