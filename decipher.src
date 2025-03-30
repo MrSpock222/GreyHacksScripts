@@ -1,26 +1,22 @@
-package = @get_custom_object
+aptclient = include_lib("/lib/aptclient.so")
+if not aptclient then aptclient = include_lib(current_path + "/aptclient.so")
+if not aptclient then exit("There is no aptclient.so at " + current_path + " or /lib")
+aptclient.update()
 
-
-if package.useApt then 
-	aptClient = include_lib("/lib/aptclient.so")
-	if not aptClient then include_lib(current_path + "/aptclient.so")
-	if not aptClient then exit("There is no aptclient.so at " + current_path + " or /lib!")
-	aptClient.add_repo(package.repoIP)
+if aptclient.search("crypto.so").is_match("not found") then 
+	exit("Add hackshop in sources or with apt-get addrepo [$HACKSHOP_IP]")
 end if
 
-cryptotoolsPath = "/root/crypto.so"
-cryptools = include_lib("/lib/crypto.so")
-if not cryptools then cryptools = include_lib(current_path + "/crypto.so")
+aptclient = include_lib("/lib/aptclient.so")
+if not aptclient then aptclient = include_lib(current_path + "/aptclient.so")
+if not aptclient then return print("There is no aptclient.so at " + current_path + " or /lib!")
 
-if not cryptools and package.useApt then
-	print("Installing crypto.so...")
-	aptClient.install("crypto.so", current_path)
-end if
+print("Installing crypto.so")
+aptclient.install("crypto.so", current_path)
+cryptools = include_lib(current_path + "/crypto.so")
 
-if not cryptools then cryptools = include_lib(current_path + "/crypto.so")
-if not cryptools then exit("Error: Missing crypto library")
-
-customObj = get_custom_object()
+if params.len != 1 or params[0] == "-h" or params[0] == "--help" then exit(command_info("decipher_usage"))
+origFile = params[0]
 
 GetPassword = function(userPass)
 	if userPass.len != 2 then return ("decipher: wrong syntax")
@@ -28,9 +24,7 @@ GetPassword = function(userPass)
 	return password
 end function
 
-if params.len != 1 or params[0] == "-h" or params[0] == "--help" then exit(command_info("decipher_usage"))
 
-origFile = params[0]
 file = get_shell.host_computer.File(origFile)
 if file then
 	if file.is_binary then exit("decipher: can't read " + origFile + ". Binary file")
