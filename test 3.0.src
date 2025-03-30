@@ -1275,16 +1275,6 @@ Menu.init = function()
 		print("<color=#96B800>========================")
 	end function
 
-	mainFuncs.meta = {}
-	mainFuncs.meta.use = "Usage: tree"//DO DESCRIPTION#############################################################
-	mainFuncs.meta.description = "Shows all folders and files plus permissions"
-	mainFuncs.meta.run = function(x)
-		print(global.metaxlibs.len)
-		// for a in range(0,global.metalib.len - 1)
-		// 	print(a + " " + global.metalib[a])
-		// end for
-	end function
-
 	mainFuncs.shell = {}
 	mainFuncs.shell.use = "Usage: shell [show/c/rn]"
 	mainFuncs.shell.description = "Use [show] to show the log of shells\nUse [c] + index to connect to desired shell\nUse [rn] to rename a shell"
