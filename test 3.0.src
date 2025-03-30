@@ -41,7 +41,6 @@ if DEBUG then
 	Current.metaxploit = include_lib("/lib/metaxploit.so")
 	Current.crypt = include_lib("/lib/crypto.so")
 	Current.aptclient = include_lib("/lib/aptclient.so")
-	global.metaxlibs.push(Current.metaxploit)
 end if
 
 Shells = []
@@ -513,7 +512,6 @@ Menu.init = function()
 		print("Installing metaxploit.so")
 		Current.aptclient.install("metaxploit.so", current_path)
 		Current.metaxploit = include_lib(current_path + "/metaxploit.so")
-		global.metaxlibs.push(Current.metaxploit)
 	
 		print("Installing crypto.so")
 		Current.aptclient.install("crypto.so", current_path)
