@@ -2,7 +2,7 @@ __version = "3.0"
 __name = "test"
 
 /////////////////////////////////////////////////////////CONFIG START/////////////////////////////////////////////////////////
-password = ""
+password = "cola123"
 hackshopip = "123.230.147.159" //If not set use apt-get
 codesFileName = "codes.db" //
 codesPath = "/root" //Default codes path if kit does not exist
@@ -90,7 +90,471 @@ isStartShell = function(shell)
 	return false
 end function
 
-import_code("/root/src/core.src")//override=core.src
+MainFuncsForCode = {}
+MainFuncsForCode.chosesmth = function(listOfVariables = ["option 1"], descriptionText = "No description set", removeInt = 0)
+	markPrefix = "<mark=#D1D1D143>"
+	infoPrefix = "<color=#FF0000df>"
+	num = 0
+	if removeInt > 0 then listOfVariables.remove(removeInt - 1)
+	
+		while (true)
+		counter = 0
+		clear_screen()
+		print (descriptionText)
+		
+		print("-------------------------------------------")
+		for variables in listOfVariables
+			if counter == num then print(markPrefix + variables)
+			if counter != num then print(variables)
+			counter = counter + 1
+		end for
+		print("-------------------------------------------")
+
+		key = user_input("Press Up or Down arrow Key<size=0%>", false, true)
+
+		if (key == "DownArrow") or (key == "s") then
+			num = num + 1
+			if num > listOfVariables.len - 1 then num = 0
+		else if (key == "UpArrow") or (key == "w") then
+			num = num - 1
+			if num < 0 then num = listOfVariables.len - 1
+		else if key == "q" then 
+			clear_screen
+			return -1
+		else
+			clear_screen()
+			print("You chose: " + (num + 1))
+			return num
+		end if
+		
+		end while
+	
+end function
+
+MainFuncsForCode.getmemcodes = function(typeOfCode, metaLib)
+	memory = null
+
+	if DEBUG then return Current.metaxploit.scan(metaLib)
+
+	for file in MainFuncsForCode.getFiles(get_custom_object["Shells"][0].shell, "", ".Trash")
+		if file.name == "kit" then 
+			codesPath = file.path
+			break
+		end if
+	end for
+
+
+	if get_custom_object["Shells"][0].shell.host_computer.File(codesPath + "/" + codesFileName) == null then
+		hostComputer = get_shell.host_computer
+		createResult = hostComputer.touch(codesPath, codesFileName)
+		if typeof(createResult) == "number" then
+			print("Codes file got created at given path " + codesPath)
+		else if typeof(createResult) == "string" then 
+			print(createResult)
+			return null
+		end if
+	end if
+
+
+	codesFile = get_custom_object["Shells"][0].shell.host_computer.File(codesPath + "/" + codesFileName)
+
+	if codesFile == null then 
+		print("codes.txt doesnt exist at path: " + codesPath) //ONLY FOR DEBUG REASONS.. SHOULD ALREADY BE CREATED IF NOT EXISTING
+		return null
+	end if
+
+	codeCont = codesFile.get_content.split("\n")
+
+	for line in codeCont
+		if line == "" then break
+		le = line.split(" ")
+		if le[0] + " " + le[1] != typeOfCode then continue
+		memory = line[line.indexOf("[") : line.indexOf("]") + 1]
+		memory = memory.split("""")
+		break
+	end for
+
+	if memory == null then
+		memory = get_custom_object["mx0"].scan(metaLib)
+		if memory == null then exit("Update your metaxploit.so libary!")
+		toWriteMem = " " + memory
+
+		if codesFile.get_content.trim == "" then cont = typeOfCode + toWriteMem else cont = char(10) + typeOfCode + toWriteMem
+		
+
+
+		get_custom_object["Shells"][0].shell.host_computer.File(codesPath + "/" + codesFileName).set_content(get_custom_object["Shells"][0].shell.host_computer.File(codesPath + "/" + codesFileName).get_content + cont)
+	end if
+
+	return memory
+end function
+
+MainFuncsForCode.showAllPasswords = function(file, startFromMainFolder = true)
+
+	if startFromMainFolder then
+		while file.path != "/"
+			file = file.parent
+		end while
+	end if
+
+	if not file then return print(file.name + " not found.")
+	holderPass = []
+	holderMail = []
+	holderAll = []
+	for f in MainFuncsForCode.getFiles(file)
+		if f.content == null then continue
+		if f.name == "passwd" and f.content != "" then 
+			for a in f.content.split("\n")
+				if a != "" and holderPass.indexOf(a) == null then holderPass.push(a)
+			end for
+		end if
+
+		if f.name == "Mail.txt" and f.content != "" then 
+			for a in f.content.split("\n")
+				if a != "" and holderMail.indexOf(a) == null then holderMail.push(a)
+			end for
+		end if
+
+		if (f.name == "Mail.txt" or f.name == "passwd") and f.content != "" then 
+			for a in f.content.split("\n")
+				if a != "" and holderAll.indexOf(a) == null then holderAll.push(a)
+			end for
+		end if
+	end for
+
+	counter = 1
+	print("<color=yellow>=================================================")
+	print("Passwords:")
+	if holderPass.len == 0 then
+		print("No credentials found.")
+	else
+		for f in holderPass
+			if not f then continue
+			print(counter + ": " + f)
+			counter = counter + 1
+		end for
+	end if 
+
+	print("<color=blue>-------------------------------------------------")
+	print("Mails:")
+	if holderMail.len == 0 then
+		print("No credentials found.")
+	else
+		for f in holderMail
+			if not f then continue
+			print(counter + ": " + f)
+			counter = counter + 1
+		end for
+	end if 
+
+	if holderAll.len == 0 then return user_input("Nothing found :(")
+	print("<color=yellow>=================================================")
+	desc = "all - deciphers all passwords and mails" + char(10) +
+		   "allp - deciphers all passwords" + char(10) +
+		   "allm - deciphers all mails"
+	print(desc)
+	while true
+		option = user_input("Choose: ")
+		if (option.trim.to_int > counter or counter <= option.trim.to_int) and not option.trim == "all" then continue 
+
+		if option == "" then
+			return
+		else if option == "all" then
+			for a in range(0,holderAll.len - 1)
+				MainFuncsForCode.PrintPassword(holderAll[a])
+			end for
+		else if option == "allp" then
+			for a in range(0,holderPass.len - 1)
+				MainFuncsForCode.PrintPassword(holderPass[a])
+			end for
+		else if option == "allm" then
+			for a in range(0,holderMail.len - 1)
+				MainFuncsForCode.PrintPassword(holderMail[a])
+			end for
+		else if holderAll.hasIndex(option.to_int - 1) then
+			MainFuncsForCode.PrintPassword(holderAll[option.to_int - 1])
+		else if option == "q" then
+			break
+		end if
+		break
+	end while
+end function
+
+MainFuncsForCode.getFiles = function(targetShell = null, x = "", excludeFolder = "")
+	
+	if typeof(targetShell) == "shell" then f = host_computer(targetShell).File("/")
+	if typeof(targetShell) == "computer" then f = targetShell.File("/")
+	if typeof(targetShell) == "file" then 
+		f = targetShell
+		while f.path != "/"
+			f = f.parent
+		end while
+	end if
+	x = x.trim
+	if x.len > 3 then return null
+	Files = []
+
+	RecFunc = function(f)
+		for fil in f.get_folders
+			
+			if x == "" then
+				if fil.name == excludeFolder then continue
+				Files.push(File.create(fil.name, fil.path,"d","",fil))
+			else
+				if fil.name == excludeFolder then continue
+
+				hasperm = true
+				for perm in range(x)
+					if not fil.has_permission(x[perm]) then 
+						hasperm = false
+						continue
+					end if
+				end for
+
+				if hasperm then 
+					Files.push(File.create(fil.name, fil.path,"d","", fil))
+				end if
+
+			end if
+
+			for fe in fil.get_files
+
+				if x == "" then
+					Files.push(File.create(fe.name, fe.path,"f",fe.get_content, fe))
+				else
+
+					if fe.name == excludeFolder then continue	
+	
+					hasperm = true
+					for perm in range(x)
+						if not fe.has_permission(x[perm]) then
+							hasperm = false
+							continue
+						end if
+					end for
+	
+	
+					if hasperm then 
+						Files.push(File.create(fe.name, fe.path,"f",fe.get_content, fe))
+					end if
+				end if
+
+			end for
+			RecFunc(fil)
+		end for
+	end function
+
+	RecFunc(f)
+	
+	return Files
+
+end function
+
+MainFuncsForCode.PrintPassword = function(line)
+
+	userPass = line.split(":")
+	if userPass.len != 2 then return ("decipher: wrong syntax")
+	password = Current.crypt.decipher(userPass[1])
+	if not password then print("Can't find password :(")
+	if password then
+		get_custom_object["succeeded"] = true
+		print("\nUser: " + userPass[0])
+		print("Password: " + "<color=red>" + password)
+	end if
+
+end function
+
+MainFuncsForCode.scanalllibs = function(files)
+	for c in range(1,files.len)
+		metaLib = Current.metaxploit.load(files[c - 1].path)
+		if not metaLib then
+			if DEBUG then print("Skipped NULL")
+			continue
+		end if
+		typeOfCode = metaLib.lib_name + " " + metaLib.version
+		print("Scanning: " + metaLib.lib_name + " " + metaLib.version)
+		MainFuncsForCode.getmemcodes(typeOfCode, metaLib)
+	end for
+end function
+
+MainFuncsForCode.checkuser = function(result)
+	user = ""
+	rfile = null
+	file = null
+	if typeof(result) != "shell" and typeof(result) != "file" and typeof(result) != "computer" then return "???"
+	if typeof(result) == "computer" then
+		file = result.File("/home")
+		rfile = result.File("/root")
+	else if typeof(result) == "shell" or typeof(result) == "ftpshell" then
+		file = result.host_computer.File("/home")
+		rfile = result.host_computer.File("/")
+	end if
+	if rfile and rfile.has_permission("w") then
+		user = "root"
+	else if rfile and file then
+		for folder in file.get_folders
+			if folder.has_permission("w") and folder.name != "guest" then user = folder.name
+		end for
+	end if
+
+
+	if typeof(result) == "file" then
+	file = result
+	if file.name != "/" then
+		file = file.parent
+		while file.name != "/"
+			file = file.parent
+		end while
+	end if
+
+	if not file then return "???"
+	if file.has_permission("w") then user = "root"
+		for folder in file.get_folders
+			if folder.name == "root" then
+				if folder.has_permission("w") then user = "root"
+			end if
+			if folder.name == "home" and user != "root" then
+				for sub in folder.get_folders
+					if sub.has_permission("w") and sub.name != "guest" then user = sub.name
+				end for
+			end if
+		end for
+	end if
+	if user == "" then user = "guest"
+	return user
+end function
+
+MainFuncsForCode.copytotarget = function(targetShell)
+
+	paths = []
+
+	for folder in MainFuncsForCode.getFiles(targetShell, "wrx")
+		if folder.type == "d" then paths.push(folder.path)
+	end for
+
+	loc = paths.get("/root")
+	if not loc then loc = paths.get("/home/" + MainFuncsForCode.checkuser(targetShell))
+
+	kit = get_custom_object["Shells"][0].shell.host_computer.File(current_path + "/kit")
+	
+	kit.chmod("o+wrx")
+	for file in kit.get_files
+		file.chmod("o+wrx")
+	end for
+
+	if not kit then return print("Test kit is missing")
+
+	print("Installing test-kit on target...")
+
+	res = get_custom_object["Shells"][0].shell.scp(kit.path,loc, targetShell)
+	if res == "string" then print("Error: " + res)
+
+	kit.chmod("o-wrx")
+	for file in kit.get_files
+		file.chmod("o-wrx")
+	end for
+
+	return loc + "/kit/" + launch_path.split("/")[-1]
+end function
+
+MainFuncsForCode.kit = function(x)
+    CreateKit = function
+        currComp = get_custom_object["Shells"][0].shell.host_computer
+        testfile = currComp.File(launch_path)
+        paths = []
+        names = []
+
+
+        if currComp.File(current_path + "/kit") then return print("Test-kit already exists.")
+
+        for file in MainFuncsForCode.getFiles(get_custom_object["Shells"][0].shell, "",".Trash")
+            if file.type == "f" then 
+                paths.push(file.path)
+                names.push(file.name)
+            end if
+        end for
+
+        if names.get("metaxploit.so") then 
+            metaxpath = paths[names.indexOf("metaxploit.so")]
+            metaxfile = currComp.File(metaxpath)
+        end if
+        if names.get("crypto.so") then 
+            cryptopath = paths[names.indexOf("crypto.so")]
+            cryptfile = currComp.File(cryptopath)
+        end if
+        if names.get("aptclient.so") then 
+            aptpath = paths[names.indexOf("crypto.so")]
+            aptfile = currComp.File(aptpath)
+        end if
+
+        if not metaxfile then return print("Metaxploit lib is missing")
+        if not cryptfile then return print("Crypto lib is missing")
+        if not aptfile then return print("Aptclient.so lib is missing")
+        folderpath = current_path + "/kit"
+
+        print("Creating test kit...")
+        res = currComp.create_folder(current_path, "kit")
+        //currComp.File(current_path + "/kit").chmod("o+wrx")
+        if res == "string" then return print("Creation of kit folder failed: " + res)
+        res = metaxfile.copy(folderpath,"metaxploit.so")
+        if res == "string" then return print("Creation of metaxploit.so at " + folderpath + " failed.")
+        res = cryptfile.copy(folderpath,"crypto.so")
+        if res == "string" then return print("Creation of crypto.so at " + folderpath + " failed.")
+        res = aptfile.copy(folderpath,"aptclient.so")
+        if res == "string" then return print("Creation of aptclient.so at " + folderpath + " failed.")
+        res = testfile.copy(folderpath,launch_path.split("/")[-1])
+        if res == "string" then return print("Creation of t at " + folderpath + " failed.")
+        print("Test kit got created.")
+    end function
+
+    // if not x then return print("Use kit launch/install")
+
+    if x == "install" then
+        CreateKit()
+    end if
+
+    if x == "launch" then
+        if not get_custom_object["Shells"][0].shell.host_computer.File(current_path + "/kit") then 
+            userChoice = ""
+            while (true)
+                userChoice = user_input("Test-kit does not exist.\nDo you want to create it and proceed? y/n ", false, true).trim
+                if userChoice == "" then continue
+                if userChoice.lower == "n" or userChoice.lower == "y" then break
+            end while
+            if userChoice.lower == "y" then 
+                CreateKit()
+            else
+                return print("Launch kit interrupted")
+            end if
+        end if
+
+        print("Updating metaxploit.so...")
+
+        for file in MainFuncsForCode.getFiles(get_shell)
+            if file.name == "metaxploit.so" then 
+                path = file.path
+                break
+            end if
+        end for
+        res = get_shell.host_computer.File(path).copy(current_path + "/kit", "metaxploit.so")
+        if res == "string" then return("Failed updating metaxploit.so at kit!")
+
+
+
+        loc = MainFuncsForCode.copytotarget(Current.shell)
+        wasSuccessfull = true
+        launch(Current.shell, loc, "local")
+    end if
+end function
+
+MainFuncsForCode.rndIp = function()
+    ip0 = floor((rnd * 220) + 2)
+    ip1 = floor((rnd * 255))
+    if ip0 == 10 then ip0 = 222
+    if ip0 == 127 then ip0 = 223
+    if (ip0 == 192 and ip1 == 168) or (ip0 == 172 and ip1 == 16) then ip1 = 255
+    return ip0 + "." + ip1 + "." + floor((rnd * 256)) + "." + floor((rnd * 256)) //Generate a random ip, doesnt start with 1
+end function
 
 Menu = {}
 Menu.init = function()
