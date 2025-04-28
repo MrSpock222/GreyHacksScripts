@@ -1,4 +1,4 @@
-========================Scripts in development and kinda in beta============================
+==============Scripts in development and kinda in beta===========
 
 
 Scripts:
