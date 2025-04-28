@@ -97,7 +97,9 @@ Menu.init = function()
 
 	KitStart = function
 		Current.metaxploit = include_lib(current_path + "/metaxploit.so")
+		if not Current.metaxploit then Current.metaxploit = include_lib("/lib/metaxploit.so")
 		Current.crypt = include_lib(current_path + "/crypto.so")
+		if not Current.crypt then Current.crypt = include_lib("/lib/crypto.so")
 	end function
 
 	NormalStart = function
@@ -1171,9 +1173,7 @@ Menu.init = function()
 
 			rc = librs.start_service
 
-			if rc then print("Rshell service successfully started")
-			if not rc then print("Starting rshell service failed")
-			if typeof(rc) == "string" then print("Error: " + rc)
+			if typeof(rc) == "string" then return print("Error: " + rc) else print("Rshell service successfully started")
 		end if
 
 		if x[0] == "stop" then
@@ -1186,9 +1186,7 @@ Menu.init = function()
 
 			rc = librs.stop_service
 
-			if rc then print("Rshell service successfully stopped")
-			if not rc then print("Stopping rshell service failed")
-			if typeof(rc) == "string" then print("Error: " + rc)
+			if typeof(rc) == "string" then return print("Error: " + rc) else print("Rshell service successfully stopped")
 		end if
 
 		if x[0] == "run" then

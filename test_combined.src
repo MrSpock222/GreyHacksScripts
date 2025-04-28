@@ -2,7 +2,7 @@ __version = "3.0"
 __name = "test"
 
 /////////////////////////////////////////////////////////CONFIG START/////////////////////////////////////////////////////////
-password = "cola123"
+password = ""
 hackshopip = "123.230.147.159" //If not set use apt-get
 codesFileName = "codes.db" //
 codesPath = "/root" //Default codes path if kit does not exist
@@ -573,7 +573,9 @@ Menu.init = function()
 
 	KitStart = function
 		Current.metaxploit = include_lib(current_path + "/metaxploit.so")
+		if not Current.metaxploit then Current.metaxploit = include_lib("/lib/metaxploit.so")
 		Current.crypt = include_lib(current_path + "/crypto.so")
+		if not Current.crypt then Current.crypt = include_lib("/lib/crypto.so")
 	end function
 
 	NormalStart = function
@@ -852,12 +854,10 @@ Menu.init = function()
 				for el in total
 					if el != Target.router.local_ip then return el
 				end for
-				print(el)
-				print("router: " + Target.router.local_ip)
 			end function
 		
 			lan_inject = getLanInject
-
+		
 			counter = 1
 			for mem in memory
 				address = Current.metaxploit.scan_address(metaLib, mem).split("Unsafe check: ")
@@ -1649,9 +1649,7 @@ Menu.init = function()
 
 			rc = librs.start_service
 
-			if rc then print("Rshell service successfully started")
-			if not rc then print("Starting rshell service failed")
-			if typeof(rc) == "string" then print("Error: " + rc)
+			if typeof(rc) == "string" then return print("Error: " + rc) else print("Rshell service successfully started")
 		end if
 
 		if x[0] == "stop" then
@@ -1664,9 +1662,7 @@ Menu.init = function()
 
 			rc = librs.stop_service
 
-			if rc then print("Rshell service successfully stopped")
-			if not rc then print("Stopping rshell service failed")
-			if typeof(rc) == "string" then print("Error: " + rc)
+			if typeof(rc) == "string" then return print("Error: " + rc) else print("Rshell service successfully stopped")
 		end if
 
 		if x[0] == "run" then
