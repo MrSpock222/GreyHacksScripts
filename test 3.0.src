@@ -181,17 +181,14 @@ Menu.init = function()
 				if not Target.prevaddress then return null
 				return Target.prevaddress
 			else
-				if x[0] == "-r" then 
-					Target.prevaddress = get_router.local_ip
-					return Target.prevaddress 
-				end if
 				if x[0] == "rnd" then 
-					Target.prevaddress = MainFuncsForCode.rndIp
-					return Target.prevaddress 
+					ip = MainFuncsForCode.rndIp
+					Target.prevaddress = ip
+					return ip
 				end if
 				if not is_valid_ip(x[0]) then return Target.prevaddress
 				Target.prevaddress = x[0]
-				return Target.prevaddress 
+				return x[0]
 			end if
 		end function
 

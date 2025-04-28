@@ -2,7 +2,7 @@ __version = "3.0"
 __name = "test"
 
 /////////////////////////////////////////////////////////CONFIG START/////////////////////////////////////////////////////////
-password = ""
+password = "cola123"
 hackshopip = "123.230.147.159" //If not set use apt-get
 codesFileName = "codes.db" //
 codesPath = "/root" //Default codes path if kit does not exist
@@ -657,17 +657,14 @@ Menu.init = function()
 				if not Target.prevaddress then return null
 				return Target.prevaddress
 			else
-				if x[0] == "-r" then 
-					Target.prevaddress = get_router.local_ip
-					return Target.prevaddress 
-				end if
 				if x[0] == "rnd" then 
-					Target.prevaddress = MainFuncsForCode.rndIp
-					return Target.prevaddress 
+					ip = MainFuncsForCode.rndIp
+					Target.prevaddress = ip
+					return ip
 				end if
 				if not is_valid_ip(x[0]) then return Target.prevaddress
 				Target.prevaddress = x[0]
-				return Target.prevaddress 
+				return x[0]
 			end if
 		end function
 
