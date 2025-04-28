@@ -10,6 +10,10 @@ core ==> For import when building test (version) file
 test_combined ==> for faster import, same as the newest test file but core file is integrated, so no extra core import needed
 
 
+BACKUP ==> For development purposes, backup test (version) file when editing big junks of the code like full rewrites (test 1.0 ==> 2.0 ==> 3.0 etc.)
+
+DATABASE ==> Little memory dump, doesn't get often updated
+
 ====================Outdated Scripts==================
 
 These Scripts are outdated, and with less functions but still should work:
