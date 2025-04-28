@@ -463,3 +463,15 @@ MainFuncsForCode.rndIp = function()
     if (ip0 == 192 and ip1 == 168) or (ip0 == 172 and ip1 == 16) then ip1 = 255
     return ip0 + "." + ip1 + "." + floor((rnd * 256)) + "." + floor((rnd * 256)) //Generate a random ip, doesnt start with 1
 end function
+
+MainFuncsForCode.setHackshopIP = function
+	ip = ""
+	print("Searching for hackshopIP....")
+	while(Current.aptclient.search("metaxploit.so").is_match("not found"))
+		if ip != "" then Current.aptclient.del_repo(ip)
+		ip = MainFuncsForCode.rndIp
+		Current.aptclient.add_repo(ip)
+		Current.aptclient.update
+	end while
+	print("Found hackshopIP " + ip)
+end function

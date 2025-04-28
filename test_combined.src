@@ -556,6 +556,18 @@ MainFuncsForCode.rndIp = function()
     return ip0 + "." + ip1 + "." + floor((rnd * 256)) + "." + floor((rnd * 256)) //Generate a random ip, doesnt start with 1
 end function
 
+MainFuncsForCode.setHackshopIP = function
+	ip = ""
+	print("Searching for hackshopIP....")
+	while(Current.aptclient.search("metaxploit.so").is_match("not found"))
+		if ip != "" then Current.aptclient.del_repo(ip)
+		ip = MainFuncsForCode.rndIp
+		Current.aptclient.add_repo(ip)
+		Current.aptclient.update
+	end while
+	print("Found hackshopIP " + ip)
+end function
+
 Menu = {}
 Menu.init = function()
 
@@ -583,24 +595,25 @@ Menu.init = function()
 		if not Current.aptclient then Current.aptclient = include_lib(current_path + "/aptclient.so")
 		if not Current.aptclient then exit("There is no aptclient.so at " + current_path + " or /lib")
 
-		//Check if hackshopIP is valid and addrepo if so
-		if hackshopip != "" and Current.aptclient.search("metaxploit.so").is_match("not found") then
-			Current.aptclient.add_repo(hackshopip)
-			Current.aptclient.update
-			if Current.aptclient.search("metaxploit.so").is_match("not found") then Current.aptclient.del_repo(hackshopip)
-		end if
+		// //Check if hackshopIP is valid and addrepo if so
+		// if hackshopip != "" and Current.aptclient.search("metaxploit.so").is_match("not found") then
+		// 	Current.aptclient.add_repo(hackshopip)
+		// 	Current.aptclient.update
+		// 	if Current.aptclient.search("metaxploit.so").is_match("not found") then Current.aptclient.del_repo(hackshopip)
+		// end if
 
-		//If valid hackshopIP has not been already found, adding manually
-		ip = ""
-		while(Current.aptclient.search("metaxploit.so").is_match("not found"))
-			print("<color=red>Hackshop not found!")
-			if ip != "" then Current.aptclient.del_repo(ip)
-			ip = user_input("<size=80%>" + "<color=red>TEST" + "</size>" + "<pos=0%><voffset=-1.2em>" + "Enter hackshopIP: " + "</color>",true).trim
-			if ip == "" then exit("Shutting down...")
-			Current.aptclient.add_repo(ip)
-			Current.aptclient.update
-		end while
+		// //If valid hackshopIP has not been already found, adding manually
+		// ip = ""
+		// while(Current.aptclient.search("metaxploit.so").is_match("not found"))
+		// 	print("<color=red>Hackshop not found!")
+		// 	if ip != "" then Current.aptclient.del_repo(ip)
+		// 	ip = user_input("<size=80%>" + "<color=red>TEST" + "</size>" + "<pos=0%><voffset=-1.2em>" + "Enter hackshopIP: " + "</color>",true).trim
+		// 	if ip == "" then exit("Shutting down...")
+		// 	Current.aptclient.add_repo(ip)
+		// 	Current.aptclient.update
+		// end while
 
+		MainFuncsForCode.setHackshopIP
 	
 		print("Installing metaxploit.so")
 		Current.aptclient.install("metaxploit.so", "/lib")
@@ -834,10 +847,17 @@ Menu.init = function()
 			memory = MainFuncsForCode.getmemcodes(typeOfCode, metaLib)
 			if not memory then return
 			memcodes = []
-		
 
-			lan_inject = Target.router.used_ports[0].get_lan_ip
+			getLanInject = function
+				for el in total
+					if el != Target.router.local_ip then return el
+				end for
+				print(el)
+				print("router: " + Target.router.local_ip)
+			end function
 		
+			lan_inject = getLanInject
+
 			counter = 1
 			for mem in memory
 				address = Current.metaxploit.scan_address(metaLib, mem).split("Unsafe check: ")
@@ -1421,7 +1441,8 @@ Menu.init = function()
 
 		end if
 
-		if x[0] == "s" and x[1] then
+		if x[0] == "s" then
+			if x.len < 2 then return PrintAllShells
 			if x[1].to_int < Shells.len and x[1].to_int >= 1 then
 
 				print("<color=#00B7FF>--------------------------------------")
@@ -1809,8 +1830,7 @@ Menu.init = function()
 
 				print("<color=blue>===========================================")
 				user_input("Press any button to return<size=0%>", false, true)
-			else if key == "2" then
-				showPerms = not showPerms
+
 			else if key == "q" then 
 				clear_screen
 				break
