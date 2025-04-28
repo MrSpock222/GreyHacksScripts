@@ -3,7 +3,7 @@
 
 Scripts:
 
-test (version) etc. ==> Main file with all functions, continually updating
+test (version) ==> Main file with all functions, continually updating
 
 core ==> For import when building test (version) file
 
