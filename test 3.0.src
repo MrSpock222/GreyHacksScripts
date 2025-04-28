@@ -570,7 +570,7 @@ Menu.init = function()
 		emptyRow = "\n" + colorPrefixBad + "<b>-------------------------------------------------------</b>\n"
 		withLogClearText = colorPrefixGood + "<b><size=200%>Cleanup completed!</size></b>"
 
-
+		if not isStartShell(Current.shell) then return print("<color=red>Only possible at host shell\n<color=orange>Note: If the IP is white highlighted")
 		currentFolder = Current.computer.File(current_path)
 		currentFolderPath = currentFolder.path
 		clear_screen()
@@ -628,6 +628,7 @@ Menu.init = function()
 	mainFuncs.sudo.use = "Usage: sudo [user]"
 	mainFuncs.sudo.description = "Sudo switches user"
 	mainFuncs.sudo.run = function(x)
+		if not isStartShell(Current.shell) then return print("<color=red>Only possible at host shell\n<color=orange>Note: If the IP is white highlighted")
 		file = ""
 		usershell = get_shell(x[0],user_input("Password: ",true,false))
 		if not usershell then return print("<color=red>Failed!")
@@ -640,6 +641,7 @@ Menu.init = function()
 	mainFuncs.lib.use = "Usage: lib"
 	mainFuncs.lib.description = "Scan the desired libary for vulnerabilities.\nUse [all] to scan all libs"
 	mainFuncs.lib.run = function(x)
+		if not isStartShell(Current.shell) then return print("<color=red>Only possible at host shell\n<color=orange>Note: If the IP is white highlighted")
 
 		files = Current.computer.File("/lib").get_files
 
@@ -1165,6 +1167,7 @@ Menu.init = function()
 		end if
 
 		if x[0] == "run" then
+			if not isStartShell(Current.shell) then return print("<color=red>Only possible at host shell\n<color=orange>Note: If the IP is white highlighted")
 			input = user_input("Choose a Port:", false, false).trim.to_int
 			print("<color=blue>=================</color>")
 			if typeof(input) != "number" then 
