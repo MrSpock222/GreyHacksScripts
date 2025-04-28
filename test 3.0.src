@@ -576,6 +576,7 @@ Menu.init = function()
 		clear_screen()
 
 		if currentFolderPath.split("/")[-1] == "kit" then
+			fileName = currentFolder.name
 			result = currentFolder.delete
 			if result == "" then print(colorPrefixGood + fileName + " got successfully deleted.")
 			if result != "" then print(colorPrefixBad + fileName + " " + result)
@@ -590,6 +591,8 @@ Menu.init = function()
 
 
 		print(emptyRow + withLogClearText + emptyRow)
+
+		mainFuncs.clearlog.run
 
 	end function
 
@@ -630,7 +633,7 @@ Menu.init = function()
 		if not usershell then return print("<color=red>Failed!")
 		Current.shell = usershell
 		Current.computer = Current.shell.host_computer
-		launch(usershell, launch_path)
+		launch(usershell, program_path, "local")
 	end function
 
 	mainFuncs.lib = {}
@@ -1074,26 +1077,13 @@ Menu.init = function()
 	mainFuncs.q.run = function(x)
 
 		while true
-			userinput = user_input("Sure you want to quit? [y/n]\n", false, true).trim
-			if userinput == "y" or userinput == "Y" then exit("Shutting down...")
-			return
+			userinput = user_input("Sure you want to quit? [y/n]\n", false, true).trim.lower
+			if userinput == "y" then 
+				clear_screen
+				exit("Shutting down...")
+			end if
+			if userinput == "n" then break
 		end while
-
-		// if not x then
-		// 	print("<color=#00B7FF>--------------------------------------")
-		// 	print("Routing to StartShell\nPublic IP: " +  Current.computer.public_ip + "\nLocal IP: " + Current.computer.local_ip)
-		// 	print("<color=#00B7FF>--------------------------------------")
-		// 	Current.shell = Shells[0].shell
-		// 	Current.computer = Current.shell.host_computer
-		// else if x[0] == "l" then 
-		// 	print()
-		// 	print("<color=#00B7FF>--------------------------------------")
-		// 	print("Routing to \nUser: " + MainFuncsForCode.checkuser(Current.shell) + "\nPublic IP: " +  Current.computer.public_ip + "\nLocal IP: " + Current.computer.local_ip)
-		// 	print("<color=#00B7FF>--------------------------------------")
-		// 	exit(Current.shell.start_terminal)
-		// else if x[0] == "all" then
-		// 	exit("Shutting down...")
-		// end if
 	end function
 
 	mainFuncs.ps = {}
@@ -1214,7 +1204,19 @@ Menu.init = function()
 				option = user_input("Select shell>").to_int
 			end while
 			print("Starting shell #" + option)
-			shells[option - 1].start_terminal
+			
+			//HANDLE SHELL
+			shell = shells[option - 1]
+			Current.shell = shell
+			Current.computer = Current.shell.host_computer
+			Current.user = MainFuncsForCode.checkuser(shell)
+
+			option = MainFuncsForCode.chosesmth(["1: Enter remotely", "2: Launch kit", "3: Start Terminal"],"Choose a option")
+			if option == -1 then return
+
+			if option == 1 then MainFuncsForCode.kit("launch")
+			if option == 2 then exit(Current.shell.start_terminal)
+			//HANDLE SHELL
 
 		end if
 
