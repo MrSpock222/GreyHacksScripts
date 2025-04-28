@@ -6,7 +6,15 @@ password = ""
 hackshopip = "123.230.147.159" //If not set use apt-get
 codesFileName = "codes.db" //
 codesPath = "/root" //Default codes path if kit does not exist
+Server = {}
+Server.use = false //NOT USED
+Server.IP = "78.194.123.64"
+Server.port = 22
+Server.service = "ssh"
+Server.pw = "love666"
+Server.user = "root"
 /////////////////////////////////////////////////////////CONFIG END/////////////////////////////////////////////////////////
+Server.shell = null //DONT CHANGE
 
 Target = {}
 Target.router = null
@@ -37,12 +45,21 @@ if DEBUG then
 end if
 
 if not get_custom_object.hasIndex("Shells") then get_custom_object["Shells"] = []
-Shells = @get_custom_object["Shells"]
 
 Shell = {}
 Shell.shell = null
 Shell.localIP = ""
 Shell.publicIP = ""
+Shell.name = ""
+Shell.getPublicIP = function
+	return self.publicIP
+end function
+Shell.getLocalIP = function
+	return self.localIP
+end function
+Shell.getShell = function
+	return self.shell
+end function
 Shell.setName = function(name)
 	self.name = name
 end function
@@ -55,7 +72,7 @@ Shell.create = function(shell, publicIP, localIP, name = "Shell")
 	return x
 end function
 
-if Shells.len == 0 then Shells.push(Shell.create(Current.shell,Current.computer.public_ip,Current.computer.local_ip))
+if get_custom_object["Shells"].len == 0 then get_custom_object["Shells"].push(Shell.create(Current.shell,Current.computer.public_ip,Current.computer.local_ip))
 
 
 File = {}
@@ -64,6 +81,26 @@ File.name = ""
 File.path = ""
 File.type = ""
 File.content = ""
+File.getName = function
+	return self.name
+end function
+
+File.getPath = function
+	return self.path
+end function
+
+File.getType = function
+	return self.type
+end function
+
+File.getContent = function
+	return self.content
+end function
+
+File.getObject = function
+	return self.object
+end function
+
 File.create = function(name, path, type, content, object)
 	x = new File
 	x.name = name
@@ -81,21 +118,15 @@ list.get = function(x)
 	return null
 end function
 
-startShellLocalIP = Current.computer.local_ip
-startShellPublicIP = Current.computer.public_ip
-isStartShell = function(shell)
-	localIP = shell.host_computer.local_ip
-	publicIP = shell.host_computer.public_ip
-	if localIP == startShellLocalIP and publicIP == startShellPublicIP then return true
-	return false
-end function
-
 import_code("/root/t/core.src")//override=core.src
 
 Menu = {}
 Menu.init = function()
 
 	KitStart = function
+		if Server.use then Server.shell = get_shell.connect_service(Server.IP, Server.port, Server.user, Server.pw, Server.service)
+		if typeof(Server.shell) != "shell" and Server.use then return print("Server connection failed...\nCheck configs")
+
 		Current.metaxploit = include_lib(current_path + "/metaxploit.so")
 		Current.crypt = include_lib(current_path + "/crypto.so")
 	end function
@@ -113,40 +144,37 @@ Menu.init = function()
 		print "\n<align=""center"">Hacking Tool" + char(169) + "</align>\n<align=""center""><size=50px>TEST</size></align>\n<align=""center"">" + "by" + " Notschge</align>\n"
 		print "Initializing..."
 
-		if not Current.computer.is_network_active then return
+		if Server.use then Server.shell = get_shell.connect_service(Server.IP, Server.port, Server.user, Server.pw, Server.service)
+		if typeof(Server.shell) != "shell" and Server.use then return print("Server connection failed...\nCheck configs")
 
-		Current.aptclient = include_lib("/lib/aptclient.so")
-		if not Current.aptclient then Current.aptclient = include_lib(current_path + "/aptclient.so")
-		if not Current.aptclient then exit("There is no aptclient.so at " + current_path + " or /lib")
-
-		//Check if hackshopIP is valid and addrepo if so
-		if hackshopip != "" and Current.aptclient.search("metaxploit.so").is_match("not found") then
+		if not DEBUG then
+			Current.aptclient = include_lib("/lib/aptclient.so")
+			if not Current.aptclient then Current.aptclient = include_lib(current_path + "/aptclient.so")
+			if not Current.aptclient then exit("There is no aptclient.so at " + current_path + " or /lib")
 			Current.aptclient.add_repo(hackshopip)
-			Current.aptclient.update
-			if Current.aptclient.search("metaxploit.so").is_match("not found") then Current.aptclient.del_repo(hackshopip)
-		end if
+			Current.aptclient.update()
 
-		//If valid hackshopIP has not been already found, adding manually
-		ip = ""
-		while(Current.aptclient.search("metaxploit.so").is_match("not found"))
-			print("<color=red>Hackshop not found!")
-			if ip != "" then Current.aptclient.del_repo(ip)
-			ip = user_input("<size=80%>" + "<color=red>TEST" + "</size>" + "<pos=0%><voffset=-1.2em>" + "Enter hackshopIP: " + "</color>",true).trim
-			if ip == "" then exit("Shutting down...")
-			Current.aptclient.add_repo(ip)
-			Current.aptclient.update
-		end while
-
+			ip = ""
+			while(Current.aptclient.search("metaxploit.so").is_match("not found"))
+				print("<color=red>Hackshop not found!")
+				if ip != "" then Current.aptclient.del_repo(ip)
+				ip = user_input("<size=80%>" + "<color=red>TEST" + "</size>" + "<pos=0%><voffset=-1.2em>" + "Enter hackshopIP: " + "</color>",true).trim
+				if ip == "" then exit("Shutting down...")
+				Current.aptclient.add_repo(ip)
+				Current.aptclient.update
+			end while
 	
-		print("Installing metaxploit.so")
-		Current.aptclient.install("metaxploit.so", "/lib")
-		Current.metaxploit = include_lib("/lib/metaxploit.so")
-	
-		print("Installing crypto.so")
-		Current.aptclient.install("crypto.so", "/lib")
-		Current.crypt = include_lib("/lib/crypto.so")
+		
+			print("Installing metaxploit.so")
+			Current.aptclient.install("metaxploit.so", "/lib")
+			Current.metaxploit = include_lib("/lib/metaxploit.so")
+		
+			print("Installing crypto.so")
+			Current.aptclient.install("crypto.so", "/lib")
+			Current.crypt = include_lib("/lib/crypto.so")
 			
 
+		end if
 	end function
 
 	if params then
@@ -173,27 +201,18 @@ Menu.init = function()
 		ports = null
 		pr = []
 
-		getAddress = function
-			if not x then 
-				if not Target.prevaddress then return null
-				return Target.prevaddress
+		if not x then 
+			if not Target.prevaddress then return print(mainFuncs.scan.use)
+			Target.address = Target.prevaddress
+		else
+			if x[0] == "-r" then Target.address = get_router
+			if not is_valid_ip(x[0]) then 
+				Target.address = Target.prevaddress
 			else
-				if x[0] == "-r" then 
-					Target.prevaddress = get_router.local_ip
-					return Target.prevaddress 
-				end if
-				if x[0] == "rnd" then 
-					Target.prevaddress = MainFuncsForCode.rndIp
-					return Target.prevaddress 
-				end if
-				if not is_valid_ip(x[0]) then return Target.prevaddress
-				Target.prevaddress = x[0]
-				return Target.prevaddress 
+				Target.address = x[0]
+				Target.prevaddress = Target.address
 			end if
-		end function
-
-		Target.address = getAddress
-		if not Target.address then return print(mainFuncs.scan.use)
+		end if
 
 		////////////////////MAIN SETUP////////////////////
 
@@ -368,7 +387,6 @@ Menu.init = function()
 			metaLib = net_session.dump_lib
 			typeOfCode = metaLib.lib_name + " " + metaLib.version
 			memory = MainFuncsForCode.getmemcodes(typeOfCode, metaLib)
-			if not memory then return
 			memcodes = []
 		
 
@@ -406,7 +424,6 @@ Menu.init = function()
 			metaLib = net_session.dump_lib
 			typeOfCode = metaLib.lib_name + " " + metaLib.version
 			memory = MainFuncsForCode.getmemcodes(typeOfCode, metaLib)
-			if not memory then return
 			memcodes = []
 
 			counter = 1
@@ -452,19 +469,18 @@ Menu.init = function()
 				Current.user = MainFuncsForCode.checkuser(shell)
 
 				ismatch = false
-				for s in range(Shells.len - 1,0)
-					if Shells[s].localIP == shell.host_computer.local_ip and Shells[s].publicIP == shell.host_computer.public_ip then 
+				for s in range(get_custom_object["Shells"].len - 1,0)
+					if get_custom_object["Shells"][s].getLocalIP == shell.host_computer.local_ip and get_custom_object["Shells"][s].getPublicIP == shell.host_computer.public_ip then 
 						ismatch = true
 						break
 					end if
 				end for
 				
-				if not ismatch then Shells.push(Shell.create(shell,shell.host_computer.public_ip,shell.host_computer.local_ip))
+				if not ismatch then get_custom_object["Shells"].push(Shell.create(shell,shell.host_computer.public_ip,shell.host_computer.local_ip))
 
 				wasSuccessfull = true
 
 				option = MainFuncsForCode.chosesmth(["1: Enter remotely", "2: Launch kit", "3: Start Terminal"],"Choose a option")
-				if option == -1 then return
 
 				if option == 1 then MainFuncsForCode.kit("launch")
 				if option == 2 then exit(Current.shell.start_terminal)
@@ -473,14 +489,13 @@ Menu.init = function()
 			Handle.computer = function
 				comp = metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2], userInput)
 				option = MainFuncsForCode.chosesmth(["1: Get credentials", "2: Show files"], "Choose a option")
-				if option == -1 then return
 				
 				if option == 0 then MainFuncsForCode.showAllPasswords(comp.File("/"))
 					
 				if option == 1 then 
 					for f in MainFuncsForCode.getFiles(comp)
-						if f.type == "d" then print("<color=blue>" + f.name)
-						if f.type == "f" then print(" =>" + f.name)
+						if f.getType == "d" then print("<color=blue>" + f.getName)
+						if f.getType == "f" then print(" =>" + f.getName)
 					end for
 				end if
 				wasSuccessfull = true
@@ -488,14 +503,13 @@ Menu.init = function()
 			Handle.file = function
 				file = metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2])
 				option = MainFuncsForCode.chosesmth(["1: Get credentials", "2: Show files"], "Choose a option")
-				if option == -1 then return
 				
 				if option == 0 then MainFuncsForCode.showAllPasswords(file)
 					
 				if option == 1 then 
 					for f in MainFuncsForCode.getFiles(file)
-						if f.type == "d" then print("<color=blue>" + f.name)
-						if f.type == "f" then print(" =>" + f.name)
+						if f.getType == "d" then print("<color=blue>" + f.getName)
+						if f.getType == "f" then print(" =>" + f.getName)
 					end for
 				end if
 				wasSuccessfull = true
@@ -505,14 +519,13 @@ Menu.init = function()
 				if typeof(res) == "file" then
 					file = res
 					option = MainFuncsForCode.chosesmth(["1: Get credentials", "2: Show files"], "Choose a option")
-					if option == -1 then return
 					
 					if option == 0 then MainFuncsForCode.showAllPasswords(file)
 						
 					if option == 1 then 
 						for f in MainFuncsForCode.getFiles(file)
-							if f.type == "d" then print("<color=blue>" + f.name)
-							if f.type == "f" then print(" =>" + f.name)
+							if f.getType == "d" then print("<color=blue>" + f.getName)
+							if f.getType == "f" then print(" =>" + f.getName)
 						end for
 					end if
 					wasSuccessfull = true
@@ -520,14 +533,13 @@ Menu.init = function()
 				if typeof(res) == "computer" then
 					comp = res
 					option = MainFuncsForCode.chosesmth(["1: Get credentials", "2: Show files"], "Choose a option")
-					if option == -1 then return
 					
 					if option == 0 then MainFuncsForCode.showAllPasswords(comp.File("/"))
 						
 					if option == 1 then 
 						for f in MainFuncsForCode.getFiles(comp)
-							if f.type == "d" then print("<color=blue>" + f.name)
-							if f.type == "f" then print(" =>" + f.name)
+							if f.getType == "d" then print("<color=blue>" + f.getName)
+							if f.getType == "f" then print(" =>" + f.getName)
 						end for
 					end if
 					wasSuccessfull = true
@@ -539,14 +551,14 @@ Menu.init = function()
 					Current.user = MainFuncsForCode.checkuser(shell)
 	
 					ismatch = false
-					for s in range(Shells.len - 1,0)
-						if Shells[s].localIP == shell.host_computer.local_ip and Shells[s].publicIP == shell.host_computer.public_ip then 
+					for s in range(get_custom_object["Shells"].len - 1,0)
+						if get_custom_object["Shells"][s].getLocalIP == shell.host_computer.local_ip and get_custom_object["Shells"][s].getPublicIP == shell.host_computer.public_ip then 
 							ismatch = true
 							break
 						end if
 					end for
 					
-					if not ismatch then Shells.push(Shell.create(shell,shell.host_computer.public_ip,shell.host_computer.local_ip))
+					if not ismatch then get_custom_object["Shells"].push(Shell.create(shell,shell.host_computer.public_ip,shell.host_computer.local_ip))
 	
 					wasSuccessfull = true
 				end if
@@ -638,18 +650,19 @@ Menu.init = function()
 	mainFuncs.lib.description = "Scan the desired libary for vulnerabilities.\nUse [all] to scan all libs"
 	mainFuncs.lib.run = function(x)
 
-		files = Current.computer.File("/lib").get_files
-
 		if x then
-			if x[0] == "all" then return MainFuncsForCode.scanalllibs(files)
+			if x[0] == "all" then return MainFuncsForCode.scanalllibs
 		end if
 
 		XPLOITS = []
 		libs = []
 		lipPaths = []
 
+		option = MainFuncsForCode.chosesmth(["Select libary", "Select libary manually (Path)", "<--"], "Choose:")
 
-		for lib in files
+		if option == 2 then return
+
+		for lib in Current.computer.File("/lib").get_files
 			if not lib.name.matches(".so") then continue
 
 			suffix = ""
@@ -659,19 +672,26 @@ Menu.init = function()
 			lipPaths.push(lib.path)
 		end for
 
-		ress = MainFuncsForCode.chosesmth(libs, "Choose a lib")
-		if ress == -1 then return
+		if option == 0 then
+			ress = MainFuncsForCode.chosesmth(libs, "Choose a lib")
+			metaLib = Current.metaxploit.load(lipPaths[ress])
+			if not metaLib then 
+				if not Current.computer.File(lipPaths[ress]).has_permission("r") then return print("Could not scan " + libs[ress] + "\n<color=red>Reason: No permission!")
+				return print("Could not scan " + libs[ress] + "\n<color=red>Reason: Try updating metaxploit!")
+			end if
+		end if
 
-		metaLib = Current.metaxploit.load(lipPaths[ress])
-		if not metaLib then 
-			if not Current.computer.File(lipPaths[ress]).has_permission("r") then return print("Could not scan " + libs[ress] + "\n<color=red>Reason: No permission!")
-			return print("Could not scan " + libs[ress] + "\n<color=red>Reason: Try updating metaxploit!")
+		if option == 1 then
+			ress = user_input("Type path: ", false, false).trim
+			if ress == "" then return
+			metaLib = Current.metaxploit.load(ress)
+			if not Current.computer.File(ress).has_permission("r") then return print("Could not scan " + Current.computer.File(ress).name + "\n<color=red>Reason: No permission!")
+			return print("Could not scan " + Current.computer.File(ress).name + "\n<color=red>Reason: Try updating metaxploit!")
 		end if
 
 
 		typeOfCode = metaLib.lib_name + " " + metaLib.version
 		memory = MainFuncsForCode.getmemcodes(typeOfCode, metaLib)
-		if not memory then return
 		memcodes = []
 	
 		counter = 1
@@ -732,20 +752,19 @@ Menu.init = function()
 			Current.user = MainFuncsForCode.checkuser(shell)
 
 			ismatch = false
-			for s in range(Shells.len - 1,0)
-				if Shells[s].localIP == shell.host_computer.local_ip and Shells[s].publicIP == shell.host_computer.public_ip then 
+			for s in range(get_custom_object["Shells"].len - 1,0)
+				if get_custom_object["Shells"][s].getLocalIP == shell.host_computer.local_ip and get_custom_object["Shells"][s].getPublicIP == shell.host_computer.public_ip then 
 					ismatch = true
 					break
 				end if
 			end for
 			
-			if not ismatch then Shells.push(Shell.create(shell,shell.host_computer.public_ip,shell.host_computer.local_ip))
+			if not ismatch then get_custom_object["Shells"].push(Shell.create(shell,shell.host_computer.public_ip,shell.host_computer.local_ip))
 
 			wasSuccessfull = true
 
 
 			option = MainFuncsForCode.chosesmth(["1: Enter remotely", "2: Launch kit", "3: Start Terminal"],"Choose a option")
-			if option == -1 then return
 
 			if option == 1 then MainFuncsForCode.kit("launch")
 			if option == 2 then exit(Current.shell.start_terminal)
@@ -754,14 +773,13 @@ Menu.init = function()
 		Handle.computer = function
 			comp = metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2], userInput)
 			option = MainFuncsForCode.chosesmth(["1: Get credentials", "2: Show files"], "Choose a option")
-			if option == -1 then return
 			
 			if option == 0 then MainFuncsForCode.showAllPasswords(comp.File("/"))
 				
 			if option == 1 then 
 				for f in MainFuncsForCode.getFiles(comp)
-					if f.type == "d" then print("<color=blue>" + f.name)
-					if f.type == "f" then print(" =>" + f.name)
+					if f.getType == "d" then print("<color=blue>" + f.getName)
+					if f.getType == "f" then print(" =>" + f.getName)
 				end for
 			end if
 			wasSuccessfull = true
@@ -769,14 +787,13 @@ Menu.init = function()
 		Handle.file = function
 			file = metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2])
 			option = MainFuncsForCode.chosesmth(["1: Get credentials", "2: Show files"], "Choose a option")
-			if option == -1 then return
 			
 			if option == 0 then MainFuncsForCode.showAllPasswords(file)
 				
 			if option == 1 then 
 				for f in MainFuncsForCode.getFiles(file)
-					if f.type == "d" then print("<color=blue>" + f.name)
-					if f.type == "f" then print(" =>" + f.name)
+					if f.getType == "d" then print("<color=blue>" + f.getName)
+					if f.getType == "f" then print(" =>" + f.getName)
 				end for
 			end if
 			wasSuccessfull = true
@@ -786,14 +803,13 @@ Menu.init = function()
 			if typeof(res) == "file" then
 				file = res
 				option = MainFuncsForCode.chosesmth(["1: Get credentials", "2: Show files"], "Choose a option")
-				if option == -1 then return
 				
 				if option == 0 then MainFuncsForCode.showAllPasswords(file)
 					
 				if option == 1 then 
 					for f in MainFuncsForCode.getFiles(file)
-						if f.type == "d" then print("<color=blue>" + f.name)
-						if f.type == "f" then print(" =>" + f.name)
+						if f.getType == "d" then print("<color=blue>" + f.getName)
+						if f.getType == "f" then print(" =>" + f.getName)
 					end for
 				end if
 				wasSuccessfull = true
@@ -801,14 +817,13 @@ Menu.init = function()
 			if typeof(res) == "computer" then
 				comp = res
 				option = MainFuncsForCode.chosesmth(["1: Get credentials", "2: Show files"], "Choose a option")
-				if option == -1 then return
 				
 				if option == 0 then MainFuncsForCode.showAllPasswords(comp.File("/"))
 					
 				if option == 1 then 
 					for f in MainFuncsForCode.getFiles(comp)
-						if f.type == "d" then print("<color=blue>" + f.name)
-						if f.type == "f" then print(" =>" + f.name)
+						if f.getType == "d" then print("<color=blue>" + f.getName)
+						if f.getType == "f" then print(" =>" + f.getName)
 					end for
 				end if
 				wasSuccessfull = true
@@ -820,14 +835,14 @@ Menu.init = function()
 				Current.user = MainFuncsForCode.checkuser(shell)
 
 				ismatch = false
-				for s in range(Shells.len - 1,0)
-					if Shells[s].localIP == shell.host_computer.local_ip and Shells[s].publicIP == shell.host_computer.public_ip then 
+				for s in range(get_custom_object["Shells"].len - 1,0)
+					if get_custom_object["Shells"][s].getLocalIP == shell.host_computer.local_ip and get_custom_object["Shells"][s].getPublicIP == shell.host_computer.public_ip then 
 						ismatch = true
 						break
 					end if
 				end for
 				
-				if not ismatch then Shells.push(Shell.create(shell,shell.host_computer.public_ip,shell.host_computer.local_ip))
+				if not ismatch then get_custom_object["Shells"].push(Shell.create(shell,shell.host_computer.public_ip,shell.host_computer.local_ip))
 
 				wasSuccessfull = true
 			end if
@@ -855,8 +870,8 @@ Menu.init = function()
 		output = ""
 		print("<color=#96B800>========================")
 		for f in MainFuncsForCode.getFiles(Current.shell)
-			if f.type == "d" then output = output + "<color=#AD0C00>" + f.object.permissions + " <color=blue>" + f.name + "\n"
-			if f.type == "f" then output = output + "<color=#AD0C00>" + f.object.permissions + "<color=#B18700>" + "  =>" + f.name + "\n"
+			if f.getType == "d" then output = output + "<color=#AD0C00>" + f.getObject.permissions + " <color=blue>" + f.getName + "\n"
+			if f.getType == "f" then output = output + "<color=#AD0C00>" + f.getObject.permissions + "<color=#B18700>" + "  =>" + f.getName + "\n"
 		end for
 		print(output)
 		print("<color=#96B800>========================")
@@ -869,15 +884,15 @@ Menu.init = function()
 		if x == null then return print(mainFuncs.shell.use)
 
 		PrintAllShells = function
-			for e in range(0, Shells.len - 1)
+			for e in range(0, get_custom_object["Shells"].len - 1)
 				print("<color=#00CCFF>--------------------------")
 				if e == 0 then print("StartShell")
-				if e != 0 then print(Shells[e].name + " " + e)
+				if e != 0 then print(get_custom_object["Shells"][e].name + " " + e)
 				suffix = ""
-				if Shells[e].localIP == Current.computer.local_ip and Shells[e].publicIP == Current.computer.public_ip then suffix = " <color=#8F7900>[Current]"
-				print("User: " + MainFuncsForCode.checkuser(Shells[e].shell) + suffix)
-				print("Public IP: " + Shells[e].publicIP)
-				print("Local IP: " + Shells[e].localIP)
+				if get_custom_object["Shells"][e].getLocalIP == Current.computer.local_ip and get_custom_object["Shells"][e].getPublicIP == Current.computer.public_ip then suffix = " <color=#8F7900>[Current]"
+				print("User: " + MainFuncsForCode.checkuser(get_custom_object["Shells"][e].getShell) + suffix)
+				print("Public IP: " + get_custom_object["Shells"][e].getPublicIP)
+				print("Local IP: " + get_custom_object["Shells"][e].getLocalIP)
 			end for
 			print("<color=#00CCFF>--------------------------")
 		end function
@@ -892,14 +907,14 @@ Menu.init = function()
 			emptyRow = "\n" + colorPrefixBad + "<b>-------------------------------------------------------</b>\n"
 			withLogClearText = colorPrefixGood + "<b><size=200%>Cleanup completed!</size></b>"
 	
-			if Shells.len - 1 == 0 then return print("There are no shells to clean")
+			if get_custom_object["Shells"].len - 1 == 0 then return print("There are no shells to clean")
 
-			for e in range(1,Shells.len - 1)	
-				print(Shells[e].name + e + ":")
-				shell = Shells[e].shell
+			for e in range(1,get_custom_object["Shells"].len - 1)	
+				print(get_custom_object["Shells"][e].name + e + ":")
+				shell = get_custom_object["Shells"][e].getShell
 				path = null
 				for file in MainFuncsForCode.getFiles(shell)
-					if file.name == "kit" then path = file.path
+					if file.getName == "kit" then path = file.getPath
 				end for
 
 				if not path and DEBUG then
@@ -909,7 +924,7 @@ Menu.init = function()
 					result = kit.delete
 
 					if not kit then
-						if DEBUG then return print(Shells[e].name + e + ": " + colorPrefixGood + kit.name + " not found.")
+						if DEBUG then return print(get_custom_object["Shells"][e].name + e + ": " + colorPrefixGood + kit.name + " not found.")
 						return
 					end if
 
@@ -920,12 +935,12 @@ Menu.init = function()
 
 				info = "<size=200%>Log cleared</size>"
 				emptyRow = "\n<color=#00BBFF><b>-------------------------------------------------------</b>\n"
-				file = Shells[e].shell.host_computer.File("/etc/fstab")
+				file = get_custom_object["Shells"][e].getShell.host_computer.File("/etc/fstab")
 
 				if file then
 					logfile = file.copy("/etc", "log")
 					wait(0.02)
-					logfile = Shells[e].shell.host_computer.File("/etc/log")
+					logfile = get_custom_object["Shells"][e].getShell.host_computer.File("/etc/log")
 
 					if logfile then
 						logfile.set_content("deleted")
@@ -945,12 +960,12 @@ Menu.init = function()
 		end if
 
 		if x[0] == "c" and x[1] then
-			if x[1].to_int < Shells.len and x[1].to_int >= 1 then
+			if x[1].to_int < get_custom_object["Shells"].len and x[1].to_int >= 1 then
 
 				print("<color=#00B7FF>--------------------------------------")
-				print("Routing to " + Shells[x[1].to_int].name + " " + x[1] + "\nUser: " + MainFuncsForCode.checkuser(Shells[x[1].to_int].shell) + "\nPublic IP: " +  Shells[x[1].to_int].publicIP + "\nLocal IP: " + Shells[x[1].to_int].localIP)
+				print("Routing to " + get_custom_object["Shells"][x[1].to_int].name + " " + x[1] + "\nUser: " + MainFuncsForCode.checkuser(get_custom_object["Shells"][x[1].to_int].getShell) + "\nPublic IP: " +  get_custom_object["Shells"][x[1].to_int].getPublicIP + "\nLocal IP: " + get_custom_object["Shells"][x[1].to_int].getLocalIP)
 				print("<color=#00B7FF>--------------------------------------")
-				Current.shell = Shells[x[1].to_int].shell
+				Current.shell = get_custom_object["Shells"][x[1].to_int].getShell
 				Current.computer = Current.shell.host_computer
 				
 			else 
@@ -960,15 +975,15 @@ Menu.init = function()
 
 		if x[0] == "rn" then 
 			PrintAllShells()
-			if Shells.len <= 1 then return print("There are no shells to rename.")
+			if get_custom_object["Shells"].len <= 1 then return print("There are no shells to rename.")
 			while (true)
 				num = user_input("<size=80%>" + "<color=red>TEST " + "</color>" + "</size>" + "<pos=0%><voffset=-1.2em>" + "[" + Current.user + "@" + Current.computer.get_name  + "] </color>sel.:").trim
 				if num.trim == "" then continue
-				if num.to_int < Shells.len and num.to_int >= 1 then 
+				if num.to_int < get_custom_object["Shells"].len and num.to_int >= 1 then 
 					while (true)
 						userChoice = user_input("<size=80%>" + "<color=red>TEST " + "</color>" + "</size>" + "<pos=0%><voffset=-1.2em>" + "[" + Current.user + "@" + Current.computer.get_name  + "] </color>name.:").trim
 						if userChoice.trim == "" then continue
-						Shells[num.to_int].setName(userChoice)
+						get_custom_object["Shells"][num.to_int].setName(userChoice)
 						break
 					end while
 				end if
@@ -1009,9 +1024,9 @@ Menu.init = function()
 				if not Current.computer.File("/").has_permission("w") then return print("<color=red>You have no permission to do that!")
 				allFiles = MainFuncsForCode.getFiles(Current.shell)
 				for file in allFiles
-					file.object.chmod("u+wrx")
-					file.object.chmod("o+wrx")
-					file.object.chmod("g+wrx")
+					file.getObject.chmod("u+wrx")
+					file.getObject.chmod("o+wrx")
+					file.getObject.chmod("g+wrx")
 				end for
 				print("<color=yellow>=================================================")
 				print("<size=200%><color=blue>System unlocked!")
@@ -1036,9 +1051,9 @@ Menu.init = function()
 				if not Current.computer.File("/").has_permission("w") then return print("<color=red>You have no permission to do that!")
 				allFiles = MainFuncsForCode.getFiles(Current.shell)
 				for file in allFiles
-					file.object.chmod("u-wrx")
-					file.object.chmod("o-wrx")
-					file.object.chmod("g-wrx")
+					file.getObject.chmod("u-wrx")
+					file.getObject.chmod("o-wrx")
+					file.getObject.chmod("g-wrx")
 				end for
 		
 				print("<color=yellow>=================================================")
@@ -1050,13 +1065,13 @@ Menu.init = function()
 			allFiles = MainFuncsForCode.getFiles(Current.shell)
 			for file in allFiles
 				if file.name == "passwd" or file.name == "Mail.txt" then 
-					file.object.delete
+					file.getObject.delete
 					print(file.name + " got deleted")
 					continue
 				end if
 				if file.name.matches("sudo") or file.name.matches("Terminal.exe") or file.name.matches("Terminal") then continue
-				file.object.chmod("o-wrx")
-				file.object.chmod("g-wrx")
+				file.getObject.chmod("o-wrx")
+				file.getObject.chmod("g-wrx")
 			end for
 	
 			print("<color=yellow>=================================================")
@@ -1083,7 +1098,7 @@ Menu.init = function()
 		// 	print("<color=#00B7FF>--------------------------------------")
 		// 	print("Routing to StartShell\nPublic IP: " +  Current.computer.public_ip + "\nLocal IP: " + Current.computer.local_ip)
 		// 	print("<color=#00B7FF>--------------------------------------")
-		// 	Current.shell = Shells[0].shell
+		// 	Current.shell = get_custom_object["Shells"][0].getShell
 		// 	Current.computer = Current.shell.host_computer
 		// else if x[0] == "l" then 
 		// 	print()
@@ -1186,7 +1201,7 @@ Menu.init = function()
 			end if
 
 
-			res = Current.metaxploit.rshell_client(Shells[0].publicIP, input, "ps")
+			res = Current.metaxploit.rshell_client(get_custom_object["Shells"][0].getPublicIP, input, "ps")
 			if res then print("Success") else print("Failed")
 			print("<color=blue>=================</color>")
 		end if
@@ -1238,7 +1253,7 @@ Menu.init = function()
 
 			counter = 0
 			clear_screen()
-			print ("<color=red>X</color>plorer")
+			print ("<color=red>X</color>plorer" + depth)
 			print("<color=blue>===========================================")
 			for variables in cont
 
@@ -1249,6 +1264,7 @@ Menu.init = function()
 					if counter == num then print(markPrefix + variables.name)
 					if counter != num then print(variables.name)
 				end if
+
 
 
 
@@ -1299,11 +1315,11 @@ Menu.init = function()
 				prev.remove(depth)
 			else if key == "1" then
 				destFolder = "/home/guest/Downloads"
-				if has_permission(Shells[0].shell.host_computer.File("/"), "w") then destFolder = "/root/Downloads"
+				if has_permission(get_custom_object["Shells"][0].getShell.host_computer.File("/"), "w") then destFolder = "/root/Downloads"
 
 				clear_screen
 				print("Starting download of " + cont[num].name + "...")
-				res = Current.shell.scp(cont[num].path, destFolder, Shells[0].shell)
+				res = Current.shell.scp(cont[num].path, destFolder, get_custom_object["Shells"][0].getShell)
 				if res == 1 then 
 					print("Successfully sent file to hostmachine")
 					print("--> " + destFolder)
@@ -1325,34 +1341,11 @@ Menu.init = function()
 
 	end function
 
-	mainFuncs.rnd = {}
-	mainFuncs.rnd.use = "Usage: rnd"
-	mainFuncs.rnd.description = "Get a random IP"
-	mainFuncs.rnd.run = function(x)
-		print(MainFuncsForCode.rndIp)
-	end function
-
-	mainFuncs.pw = {}
-	mainFuncs.pw.use = "Usage: pw"
-	mainFuncs.pw.description = "Get passwords from current os\nMight not show all pw on lower priviliges then root"
-	mainFuncs.pw.run = function(x)
-	 	clear_screen
-		print(MainFuncsForCode.showAllPasswords(Current.computer.File("/")))
-	end function
-
-	mainFuncs.clear = {}
-	mainFuncs.clear.use = "Usage: clear"
-	mainFuncs.clear.description = "Clears screen"
-	mainFuncs.clear.run = function(x)
-	 	clear_screen
-	end function
-
-	mainFuncs.dec = {}
-	mainFuncs.dec.use = "Usage: dec [user@password]"
-	mainFuncs.dec.description = "Deciphers password"
-	mainFuncs.dec.run = function(x)
-		if not x then return print(mainFuncs.dec.use)
-		MainFuncsForCode.PrintPassword(x[0])
+	mainFuncs.test = {}
+	mainFuncs.test.use = "Usage: kill <color=orange>PID</color>"
+	mainFuncs.test.description = "Kills running process "
+	mainFuncs.test.run = function(x)
+		print(get_custom_object["Shells"].len)
 	end function
 
 	x = new self
@@ -1386,11 +1379,15 @@ Menu.CommandHandler = function(command)
 end function
 
 Menu.run = function
+	startShellLocalIP = Current.computer.local_ip
+	startShellPublicIP = Current.computer.public_ip
 	while (true)
-		if not get_shell.host_computer.is_network_active then ipText = "<color=red><b>OFFLINE</b></color>" else ipText = Current.computer.local_ip + ":" + Current.computer.public_ip
+		localIP = Current.computer.local_ip
+		publicIP = Current.computer.public_ip
+		if localIP == "0.0.0.0" and publicIP == "0.0.0.0" then ipText = "<color=red><b>No Connection</b></color>" else ipText = localIP + ":" + publicIP
 	
 		color = "<color=red>"
-		if isStartShell(Current.shell) then color = "<color=white>"
+		if localIP == startShellLocalIP and publicIP == startShellPublicIP then color = "<color=white>"
 
 		userChoice = user_input("<size=80%>" + color + "TEST" + "[" + ipText + "]" + "</color>" + "</size>" + "<pos=0%><voffset=-1.2em>" + Current.user + "@" + Current.computer.get_name  + ":" + program_path + "> </color>").trim
 		// userChoice = user_input("<size=80%>" + "<color=red>TEST " + suffix + "</color>" + "</size>" + "<pos=0%><voffset=-1.2em>" + "[" + Current.user + "@" + Current.computer.get_name  + "] </color>").trim
