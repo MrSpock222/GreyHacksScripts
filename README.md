@@ -3,9 +3,9 @@
 
 Scripts:
 
-test (version) ==> Main file with all functions, continually updating
+test (version) ==> Main file with all functions, continuously updating
 
-core ==> For import when building test (version) file
+core ==> For import when building test (version) file, seamlessly with test file updating
 
 test_combined ==> for faster import, same as the newest test file but core file is integrated, so no extra core import needed
 
