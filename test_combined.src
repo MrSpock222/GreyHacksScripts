@@ -652,24 +652,17 @@ Menu.init = function()
 		ports = null
 		pr = []
 
-		getAddress = function
-			if not x then 
-				if not Target.prevaddress then return null
-				return Target.prevaddress
-			else
-				if x[0] == "rnd" then 
-					ip = MainFuncsForCode.rndIp
-					Target.prevaddress = ip
-					return ip
-				end if
-				if not is_valid_ip(x[0]) then return Target.prevaddress
-				Target.prevaddress = x[0]
-				return x[0]
+		if not x then 
+			if not Target.prevaddress then return print(mainFuncs.scan.use)
+			Target.address = Target.prevaddress
+		else
+			if x[0] == "rnd" then 
+				ip = MainFuncsForCode.rndIp
+				Target.prevaddress = ip
+				Target.address = ip
 			end if
-		end function
-
-		Target.address = getAddress
-		if not Target.address then return print(mainFuncs.scan.use)
+			if not is_valid_ip(x[0]) then Target.address = Target.prevaddress
+		end if
 
 		////////////////////MAIN SETUP////////////////////
 
