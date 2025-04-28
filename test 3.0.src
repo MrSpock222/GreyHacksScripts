@@ -253,10 +253,15 @@ Menu.init = function()
 		
 		for el in Target.router.devices_lan_ip
 			total.push(el)
+			if typeof(get_router(el)) == "router" then hold.push(el)
 		end for
 
-		Target.firewalls.ips.push(Target.router.local_ip)
-		Target.firewalls.rules.push(firewall_rules(Target.router))
+		for el in hold
+			d = get_router(el).devices_lan_ip
+			for e in d
+				if total.indexOf(e) == null then total.push(e)
+			end for
+		end for
 
 		for el in total
 			for port in Target.router.device_ports(el)
@@ -268,34 +273,10 @@ Menu.init = function()
 			end for
 		end for
 
-		
-		for el in Target.router.devices_lan_ip
-			if typeof(get_router(el)) == "router" then hold.push(el)
-		end for
 
-		for el in hold
-			d = get_router(el).devices_lan_ip
-			for e in d
-				if total.indexOf(e) == null then total.push(e)
-			end for
-		end for
+		Target.firewalls.ips.push(Target.router.local_ip)
+		Target.firewalls.rules.push(firewall_rules(Target.router))
 
-		for ip in total
-			if typeof(get_router(ip)) != "router" then continue
-			r = get_router(ip)
-			Target.firewalls.ips.push(ip)
-			Target.firewalls.rules.push(firewall_rules(r))
-			for el in r.devices_lan_ip
-				if el.matches(r.local_ip) then continue
-				for port in r.device_ports(el)
-					if typeof(port) != "port" then continue
-					if r.port_info(port).matches("unknown") then continue
-					if allLanDevices.indexOf(port.port_number) != null and allLanDevices.indexOf(el) != null then continue
-					allLanDevices = allLanDevices + "\n" + portIndex + " " + port.port_number + " " + "internal" + " " + r.port_info(port) + " " + el
-					portIndex = portIndex + 1
-				end for
-			end for
-		end for
 		
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////NEEEDSS WOOORKS//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		/////////////////printig desc/////////////////
