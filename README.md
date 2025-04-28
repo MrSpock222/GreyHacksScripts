@@ -9,6 +9,8 @@ core ==> For import when building test (version) file, seamlessly with test file
 
 test_combined ==> for faster import, same as the newest test file but core file is integrated, so no extra core import needed
 
+server ==> connecting to rented server (change the necessary inputs for your use), secure and better save/connection for your rented ip as in the map.exe because the ips are stored there in a .txt file
+
 
 BACKUP ==> For development purposes, backup test (version) file when editing big junks of the code like full rewrites (test 1.0 ==> 2.0 ==> 3.0 etc.)
 
