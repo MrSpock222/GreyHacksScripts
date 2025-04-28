@@ -1,4 +1,22 @@
+======================================================
+Scripts in development and kinda in beta
+======================================================
+
+
 Scripts:
+
+test (version) etc. ==> Main file with all functions, continually updating
+
+core ==> For import when building test (version) file
+
+test_combined ==> for faster import, same as the newest test file but core file is integrated, so no extra core import needed
+
+
+====================Outdated Scripts==================
+
+These Scripts are outdated, and with less functions but still should work:
+
+
 
 test ==> for hacking pcs
 
@@ -18,4 +36,4 @@ encode ==> default encoder from an random NPC
 
 testIP ==> to test the Scripts form Visual  Studio
 
-Scripts in development and kinda in beta
+
