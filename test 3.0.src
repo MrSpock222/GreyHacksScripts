@@ -500,6 +500,10 @@ Menu.init = function()
 				end if
 				wasSuccessfull = true
 			end function
+			Handle.number = function
+				res = metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2], userInput)
+				wasSuccessfull = true
+			end function
 			Handle.nothing = function
 				res = metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2], userInput)
 				if typeof(res) == "file" then
@@ -784,6 +788,10 @@ Menu.init = function()
 					if f.type == "f" then print(" =>" + f.name)
 				end for
 			end if
+			wasSuccessfull = true
+		end function
+		Handle.number = function
+			res = metaLib.overflow(XPLOITS[num][1], XPLOITS[num][2], userInput)
 			wasSuccessfull = true
 		end function
 		Handle.nothing = function
