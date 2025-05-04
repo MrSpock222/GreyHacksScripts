@@ -229,7 +229,27 @@ MainFuncsForCode.chosesmth = function(listOfVariables = ["option 1"], descriptio
 		end if
 	
 	end while
-	
+end function
+
+MainFuncsForCode.choseInput = function(listOfVariables = ["option 1"], descriptionText = "No description set", keys = ["q"])
+	while (true)
+		input = user_input(descriptionText, false, false).trim.to_int
+		if input <= listOfVariables.len and input >= 1 then 
+			return input - 1
+		else 
+			if input == "q" or input == "" then 
+				clear_screen
+				return -1
+			end if
+
+			if keys then
+				for key in keys
+					if key == input then return input
+				end for
+			end if
+		end if
+		clear_screen
+	end while
 end function
 
 MainFuncsForCode.overrideMemCode = function(toWriteMem, libInfo)
@@ -259,17 +279,16 @@ MainFuncsForCode.overrideMemCode = function(toWriteMem, libInfo)
 			print(createResult)
 			return null
 		end if
+
+		codesFile = MainFuncsForCode.getFiles(get_custom_object["Shells"][0].shell, "", ".Trash").get(codesFileName)
 	end if
-
-	codesFile = MainFuncsForCode.getFiles(get_custom_object["Shells"][0].shell, "", ".Trash").get(codesFileName)
-
 	lines = codesFile.get_content.split(char(10))
 	
 	index = lines.indexOf(libInfo)
 
 	index = index + 1
 	while lines[index].matches("Type")
-		if lines[index].matches(meminfo) then break
+		if lines[index].split(" ")[5] + " " + lines[index].split(" ")[6] == meminfo then break //matches does not work bc '+' from value is used as regex
 		if index >= lines.len then break
 		index = index + 1
 	end while
@@ -280,10 +299,7 @@ MainFuncsForCode.overrideMemCode = function(toWriteMem, libInfo)
 	codesFile.set_content(lines.join(char(10)))
 end function
 
-MainFuncsForCode.getmemcodes = function(metaLib, lan_inject, useDB = true)
-
-	if DEBUG then return Current.metaxploit.scan(metaLib)
-
+MainFuncsForCode.getmemcodes = function(metaLib, isrouter, useDB = true, lan_inject)
 	libInfo = metaLib.lib_name + " " + metaLib.version
 	toWriteMem = []
 
@@ -311,13 +327,23 @@ MainFuncsForCode.getmemcodes = function(metaLib, lan_inject, useDB = true)
 		print("<color=blue>" + "<b>----------------------------------------------------</b>")
 		print("Database found!")
 		print("<color=orange><size=120%>" + libInfo)
-		index = index + 1
-		while lines[index].matches("Type")
-			toWriteMem.push(lines[index])
-			print(toWriteMem.len + ": " + MainFuncsForCode.printMemWithColor(toWriteMem[toWriteMem.len - 1]))
+		if isrouter then
 			index = index + 1
-			if index >= lines.len then break
-		end while
+			while lines[index].matches("Type")
+				toWriteMem.push(lines[index].replace("\bcomputer\b(?!:bounce)","computer:bounce"))
+				print(toWriteMem.len + ": " + MainFuncsForCode.printMemWithColor(toWriteMem[toWriteMem.len - 1]))
+				index = index + 1
+				if index >= lines.len then break
+			end while
+		else 
+			index = index + 1
+			while lines[index].matches("Type")
+				toWriteMem.push(lines[index].replace("computer:bounce","computer"))
+				print(toWriteMem.len + ": " + MainFuncsForCode.printMemWithColor(toWriteMem[toWriteMem.len - 1]))
+				index = index + 1
+				if index >= lines.len then break
+			end while
+		end if
 	else
 		memory = get_custom_object["mx0"].scan(metaLib)
 		if memory == null then exit("Update your metaxploit.so libary!")
@@ -366,7 +392,7 @@ MainFuncsForCode.getmemcodes = function(metaLib, lan_inject, useDB = true)
 			end for
 		end function
 
-		if lan_inject then Handle.router else Handle.other
+		if isrouter then Handle.router else Handle.other
 
 		if index == null then
 			toWriteMem.insert(0,libInfo)
@@ -380,6 +406,38 @@ MainFuncsForCode.getmemcodes = function(metaLib, lan_inject, useDB = true)
 	end if
 
 	return toWriteMem
+end function
+
+MainFuncsForCode.memCodeSelection = function(metaLib, isrouter, useDB,lanInject)
+	memory = MainFuncsForCode.getmemcodes(metaLib, isrouter, useDB,lanInject)
+	if not memory then return
+
+	text = "<color=blue>========================================" + char(10) +
+	"<color=orange>n  </color>test all null values" + char(10) +
+	"Choose a vulnerability:"
+	option = MainFuncsForCode.choseInput(memory, text,["n"])
+	if option == -1 then return
+	clear_screen()
+
+	XPLOITS = []
+	if option == "n" then 
+		for mem in memory
+			if mem.matches("null") then XPLOITS.push(mem.split(" "))
+		end for
+	else 
+		XPLOITS.push(memory[option].split(" "))
+	end if
+
+	for XPLOIT in XPLOITS
+		res = MainFuncsForCode.handle.exploits([XPLOIT[2],XPLOIT[5],XPLOIT[6]], metaLib,isrouter,lanInject)
+	end for
+
+	if option == "n" then 
+		if XPLOITS.len >= 1 then user_input("Press any key to continue")
+		MainFuncsForCode.memCodeSelection(metaLib, isrouter, useDB,lanInject)
+	end if
+
+	if XPLOITS.len == 1 and typeof(res) == "null" then user_input("Press any button to continue")
 end function
 
 MainFuncsForCode.printMemWithColor = function(input)
@@ -515,6 +573,7 @@ MainFuncsForCode.showAllPasswords = function(files, startFromMainFolder = true)
 				for a in range(0,holderAll.len - 1)
 					MainFuncsForCode.PrintPassword(holderAll[a])
 				end for
+				user_input
 			end if
 		else if option.lower == "e" then
 			if useExtDec then
@@ -523,6 +582,7 @@ MainFuncsForCode.showAllPasswords = function(files, startFromMainFolder = true)
 				for a in range(0,holderPass.len - 1)
 					MainFuncsForCode.PrintPassword(holderPass[a])
 				end for
+				user_input
 			end if
 		else if option.lower == "r" then
 			if useExtDec then
@@ -531,17 +591,19 @@ MainFuncsForCode.showAllPasswords = function(files, startFromMainFolder = true)
 				for a in range(0,holderMail.len - 1)
 					MainFuncsForCode.PrintPassword(holderMail[a])
 				end for
+				user_input
 			end if
 		else if holderAll.hasIndex(option.to_int - 1) then
 			if useExtDec then
 				MainFuncsForCode.dec.sendToHome([holderAll[option.to_int - 1]])
 			else
 				MainFuncsForCode.PrintPassword(holderAll[option.to_int - 1])
+				user_input
 			end if
 		else if option == "q" then
 			break
 		end if
-		break
+		wait(0.5)
 	end while
 end function
 
@@ -854,16 +916,19 @@ MainFuncsForCode.getTotalIpsConnected = function(router)
 end function
 
 MainFuncsForCode.handle = {}
-MainFuncsForCode.handle.exploits = function(XPLOIT, metaLib, lan_inject)
+MainFuncsForCode.handle.exploits = function(XPLOIT, metaLib, isrouter,lan_inject)
 	Handle ={}
 	Handle.shell = function
 		shell = metaLib.overflow(XPLOIT[1], XPLOIT[2])
 		if typeof(shell) != "shell" then return
 		MainFuncsForCode.handle.shell(shell)
+
+		return shell
 	end function
 
 	Handle.bounce = function
-		comp = metaLib.overflow(XPLOIT[1], XPLOIT[2], lan_inject[0])
+		if isrouter then inp = lan_inject[0] else inp = ""
+		comp = metaLib.overflow(XPLOIT[1], XPLOIT[2], inp)
 		if typeof(comp) != "computer" then return
 
 		print("Visible ips:")
@@ -893,58 +958,63 @@ MainFuncsForCode.handle.exploits = function(XPLOIT, metaLib, lan_inject)
 
 			MainFuncsForCode.handle.computer(comps)
 		end if
-
+		
+		return comp
 	end function
 
 	Handle.computer = function
 		comp = metaLib.overflow(XPLOIT[1], XPLOIT[2])
 		if typeof(comp) != "computer" then return
-		MainFuncsForCode.handle.computer(comp)
+		MainFuncsForCode.handle.computer([comp])
+		return comp
 	end function
 
 	Handle.file = function
 		file = metaLib.overflow(XPLOIT[1], XPLOIT[2])
 		if typeof(file) != "file" then return
 		MainFuncsForCode.handle.file(file)
+		return file
 	end function
 
 	Handle.firewall_disable = function
 		res = metaLib.overflow(XPLOIT[1], XPLOIT[2])
+		return res
 	end function
 
 	Handle.password_change = function
 		userinput = user_input("Enter a password:", false, false).trim
 		res = metaLib.overflow(XPLOIT[1], XPLOIT[2], userinput)
+		return res
 	end function
 
 	Handle.nothing = function
 		toWriteMem = []
 
-		if lan_inject then 
+		if isrouter then 
 			result = metaLib.overflow(XPLOIT[1], XPLOIT[2], lan_inject[0])
 
 			if result == 1 or result == 0 then toWriteMem.push("Type: " + MainFuncsForCode.checkuser(result) + " firewall_disable at memcode: " + XPLOIT[1] + " " + XPLOIT[2])
 			if typeof(result) == "computer" then toWriteMem.push("Type: " + MainFuncsForCode.checkuser(result) + " computer:bounce at memcode: " + XPLOIT[1] + " " + XPLOIT[2])
 			if typeof(result) == "shell" or typeof(result) == "null" or typeof(result) == "file" then toWriteMem.push("Type: " + MainFuncsForCode.checkuser(result) + " " + typeof(result) + " at memcode: " + XPLOIT[1] + " " + XPLOIT[2])
-			// print(toWriteMem.len + ": " + MainFuncsForCode.printMemWithColor(toWriteMem[toWriteMem.len - 1]))
 		else
 			result = metaLib.overflow(XPLOIT[1], XPLOIT[2])
 					
 			if typeof(result) == "number" then toWriteMem.push("Type: " + MainFuncsForCode.checkuser(result) + " password_change at memcode: " + XPLOIT[1] + " " + XPLOIT[2])
 			if typeof(result) != "number" then toWriteMem.push("Type: " + MainFuncsForCode.checkuser(result) + " " + typeof(result) + " at memcode: " + XPLOIT[1] + " " + XPLOIT[2])
-			// print(toWriteMem.len + ": " + MainFuncsForCode.printMemWithColor(toWriteMem[toWriteMem.len - 1]))
 		end if
 
 		MainFuncsForCode.overrideMemCode(toWriteMem[0], metaLib.lib_name + " " + metaLib.version)
 
+
+		return result
 	end function
 
 	if XPLOIT[0] == "null" then 
-		Handle["nothing"]
+		return Handle["nothing"]
 	else if XPLOIT[0] == "computer:bounce" then 
-		Handle["bounce"]
+		return Handle["bounce"]
 	else
-		Handle[XPLOIT[0]]
+		return Handle[XPLOIT[0]]
 	end if
 end function
 MainFuncsForCode.handle.shell = function(shell)
@@ -980,12 +1050,12 @@ MainFuncsForCode.handle.shell = function(shell)
 end function
 
 MainFuncsForCode.handle.computer = function(comps, option)
-	if comps.len <= 1 then 
+	if comps.len == 1 then 
 		option = MainFuncsForCode.chosesmth(["1: Get credentials", "2: Open FXplorer"], "Choose a option")
 		if option == -1 then return
 		if option == 0 then MainFuncsForCode.showAllPasswords([comps[0].File("/")])
 		if option == 1 then MainFuncsForCode.fileExplorer(comps[0])
-	else if comps.len >= 1 then
+	else if comps.len > 1 then
 		files = []
 		for comp in comps
 			files.push(comp.File("/"))
@@ -1322,6 +1392,7 @@ end function
 
 MainFuncsForCode.buildPortMap = function(address)
 	Target.info = []
+	Target.ports = []
 
 	portInfo = "PORTINDEX PORT STATUS SERVICE INFO LAN\n"
 	allLanDevices = ""
@@ -1411,6 +1482,7 @@ MainFuncsForCode.buildPortMap = function(address)
 		Target.info = Target.info + format_columns(out).split("\n")
 	end if
 
+	return Target.info
 end function
 
 MainFuncsForCode.getLanInject = function(address)
@@ -1469,94 +1541,35 @@ Menu.init = function()
 	"<color=orange>scan -r</color> scans the local ip address"
 	mainFuncs.scan.description = "Scan for ports at desired IP"
 	mainFuncs.scan.run = function(x)
-		useDB = MainFuncsForCode.Config.Get("useDB")
-
 		if not x and not Target.info then return print(mainFuncs.scan.use)
+		useDB = MainFuncsForCode.Config.Get("useDB")
+		clear_screen
 
-		if Target.info and not x then 
-			clear_screen()
-			print(Target.info.join(char(10)))
-		else
-			if is_valid_ip(x[0]) then MainFuncsForCode.buildPortMap(x[0])
-			if x[0] == "-r" then MainFuncsForCode.buildPortMap(get_router.public_ip)
-			if x[0] == "rnd" then MainFuncsForCode.buildPortMap(MainFuncsForCode.rndIp)
-			clear_screen()
-			print(Target.info.join(char(10)))
-		end if
+		if x and is_valid_ip(x[0]) then MainFuncsForCode.buildPortMap(x[0])
+		if x and x[0] == "-r" then MainFuncsForCode.buildPortMap(get_router.public_ip)
+		if x and x[0] == "rnd" then MainFuncsForCode.buildPortMap(MainFuncsForCode.rndIp)
 
-		option = 0
-		while true
-			text = "<color=blue>========================================" + char(10) +
-					"Choose port>"
-			option = user_input(text, false, false)
-			if option.trim.to_int <= Target.ports.len and option.trim.to_int >= 1 then
-				option = option.trim.to_int - 1
-				if option != 0 then 
-					if Target.ports[option].is_closed then
-					print("Port is closed...")
-					continue
-					end if
-				end if
-				break
-			end if
-			if option.trim == "" then return menu.run
-		end while
-
+		text = "<color=blue>========================================" + char(10) +
+		"Choose port>"
+		option = MainFuncsForCode.choseInput(Target.ports,Target.info.join(char(10)) + char(10) + text)
+		if option == -1 then return
+		if option != 0 and Target.ports[option].is_closed then mainFuncs.scan.run
 
 		if typeof(Target.ports[option]) == "number" then port = Target.ports[option] else port = Target.ports[option].port_number
 		net_session = Current.metaxploit.net_use(Target.info[0].split(" ")[2], port)
 		if not net_session then return print("Error: can't connect to net session")
 		metaLib = net_session.dump_lib
 
-		lanInject = null
-		if port == 0 then lanInject = MainFuncsForCode.getLanInject(Target.info[0].split(" ")[2])
-
-		memory = MainFuncsForCode.getmemcodes(metaLib, lanInject, useDB)
-		if not memory then return
-
-		print("<color=blue>" + "<b>----------------------------------------------------</b>")
-
-		num = 0
-		while(true)
-			text = "<color=orange>n       </color>test all null values" + char(10) +
-			"<color=orange>return  </color>back to port selection" + char(10) +
-			// "<color=orange>q       </color>quit" + char(10) +
-			"Choose a vulnerability:"
-
-			option = user_input(text, false, false)
-			if option.trim.to_int <= memory.len and option.trim.to_int >= 1 then
-				num = option.trim.to_int - 1
-				break
-			end if
-			if option.trim == "" then return mainFuncs.scan.run([Target.info[0].split(" ")[2]])
-			// if option.trim.lower == "q" then return
-			if option.trim.lower == "n" then break
-		end while
-
-		clear_screen()
-
-		XPLOITS = []
-		
-		if option == "n" then 
-			for mem in memory
-				if mem.matches("null") then XPLOITS.push(mem.split(" "))
-			end for
+		if port == 0 then 
+			lanInject = MainFuncsForCode.getLanInject(Target.info[0].split(" ")[2])
+			isrouter = true 
 		else 
-			XPLOITS.push(memory[num].split(" "))
+			lanInject = null
+			isrouter = false
 		end if
 
-		for XPLOIT in XPLOITS
-			if port == 0 then 
-				MainFuncsForCode.handle.exploits([XPLOIT[2],XPLOIT[5],XPLOIT[6]], metaLib,lanInject) 
-			else 
-				MainFuncsForCode.handle.exploits([XPLOIT[2],XPLOIT[5],XPLOIT[6]], metaLib)
-			end if
-		end for
-
-		if option == "n" then
-			user_input("Press any button to continue<size=0%>",false,true)
-			mainFuncs.scan.run([Target.info[0].split(" ")[2]])
-		end if
+		MainFuncsForCode.memCodeSelection(metaLib, isrouter, useDB,lanInject)
+		mainFuncs.scan.run
 
 	end function
 
@@ -1645,20 +1658,12 @@ Menu.init = function()
 		useDB = MainFuncsForCode.Config.Get("useDB")
 		if not isStartShell(Current.shell) then return print("<color=red>Only possible at host shell\n<color=orange>Note: If the IP is white highlighted")
 
-		files = MainFuncsForCode.getFiles(Current.shell).get("lib").get_files
-
-		XPLOITS = []
 		libs = []
 		lipPaths = []
 
-
-		for lib in files
+		for lib in MainFuncsForCode.getFiles(Current.shell).get("lib").get_files
 			if not lib.name.matches(".so") then continue
-
-			suffix = ""
-			if DEBUG then suffix = " [" + lib.has_permission("r") + lib.has_permission("w") + lib.has_permission("x") + "]"
-
-			libs.push(lib.name + suffix)
+			libs.push(lib.name)
 			lipPaths.push(lib.path)
 		end for
 
@@ -1672,48 +1677,16 @@ Menu.init = function()
 		end if
 		print("Scanning: " + metaLib.lib_name + " " + metaLib.version)
 
-		lanInject = null
-		if metaLib.lib_name.matches("kernel_router.so") then lanInject = MainFuncsForCode.getLanInject(get_router.local_ip)
-
-		memory = MainFuncsForCode.getmemcodes(metaLib,lanInject,useDB)
-		if not memory then return
-
-		print("<color=blue>" + "<b>----------------------------------------------------</b>")
-	
-		num = 0
-		while(true)
-			text = "<color=orange>n          </color>test all null values" + char(10) +
-			"<color=orange>return  </color>back to port selection" + char(10) +
-			"<color=orange>q       </color>quit" + char(10) +
-			"Choose a vulnerability:"
-
-			option = user_input(text, false, false)
-			if option.trim.to_int <= memory.len and option.trim.to_int >= 1 then
-				num = option.trim.to_int - 1
-				break
-			end if
-			if option.trim == "" then return mainFuncs.lib.run
-			if option.trim.lower == "q" then return
-			if option.trim.lower == "n" then break
-		end while
-	
-		clear_screen()
-		XPLOITS = []
-		
-		if option == "n" then 
-			for mem in memory
-				if mem.matches("null") then XPLOITS.push(mem.split(" "))
-			end for
+		if Current.computer.get_name.matches("router") then 
+			lanInject = MainFuncsForCode.getLanInject(get_router.local_ip)
+			isrouter = true 
 		else 
-			XPLOITS.push(memory[num].split(" "))
+			lanInject = null
+			isrouter = false
 		end if
 
-
-		for XPLOIT in XPLOITS
-			MainFuncsForCode.handle.exploits([XPLOIT[2],XPLOIT[5],XPLOIT[6]], metaLib,lanInject)
-		end for
-
-		// mainFuncs.lib.run
+		MainFuncsForCode.memCodeSelection(metaLib, isrouter, useDB,lanInject)
+		mainFuncs.lib.run
 
 	end function
 
@@ -1938,7 +1911,6 @@ Menu.init = function()
 	mainFuncs.q.use = "Usage: q"
 	mainFuncs.q.description = "Exits out of test script"
 	mainFuncs.q.run = function(x)
-
 		while true
 			userinput = user_input("Sure you want to quit? [y/n]\n", false, true).trim.lower
 			if userinput == "y" then 
