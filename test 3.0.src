@@ -3,7 +3,6 @@ __name = "test"
 
 /////////////////////////////////////////////////////////CONFIG START/////////////////////////////////////////////////////////
 password = ""
-hackshopip = "123.230.147.159" //
 codesFileName = "codes.db" //
 codesPath = "/home/guest" //Default codes path if kit does not exist
 /////////////////////////////////////////////////////////CONFIG END/////////////////////////////////////////////////////////
@@ -682,7 +681,8 @@ Menu.init = function()
 	end function
 
 	mainFuncs.dec = {}
-	mainFuncs.dec.use = "Usage: dec [user@password]"
+	mainFuncs.dec.use = "Usage: dec [user@password]" + char(10) +
+	"dec listen"
 	mainFuncs.dec.description = "Deciphers password"
 	mainFuncs.dec.run = function(x)
 		if not x then return print(mainFuncs.dec.use)
@@ -690,25 +690,35 @@ Menu.init = function()
 		if x[0] == "listen" then MainFuncsForCode.dec.listenForSend
 	end function
 
-	mainFuncs.getwlan = {}
-	mainFuncs.getwlan.use = "Usage: getwlan"
-	mainFuncs.getwlan.description = "Connects to best wlan"
-	mainFuncs.getwlan.run = function(x)
-		if not x then MainFuncsForCode.connectToWlan else MainFuncsForCode.connectToWlan(x[0].to_int)
+	mainFuncs.wlan = {}
+	mainFuncs.wlan.use = "Usage: wlan"
+	mainFuncs.wlan.description = "Connects to wlan"
+	mainFuncs.wlan.run = function(x)
+		if x then return print(mainFuncs.getwlan.use)
+		MainFuncsForCode.connectToWlan
 	end function
 
-	mainFuncs.mail = {}
-	mainFuncs.mail.use = "Usage: mail"
-	mainFuncs.mail.description = "Connects mail"
-	mainFuncs.mail.run = function(x)
-		MainFuncsForCode.showMails
-	end function
+	// mainFuncs.mail = {}
+	// mainFuncs.mail.use = "Usage: mail"
+	// mainFuncs.mail.description = "Connects mail"
+	// mainFuncs.mail.run = function(x)
+	// 	if not x then return print(mainFuncs.mail.use)
+	// 	MainFuncsForCode.showMails
+	// end function
 
 	mainFuncs.cfg = {}
 	mainFuncs.cfg.use = "Use: cfg"
 	mainFuncs.cfg.description = "Opens config menu"
 	mainFuncs.cfg.run = function(x)
 		MainFuncsForCode.Config.Manager
+	end function
+
+	mainFuncs.findlib = {}
+	mainFuncs.findlib.use = "Use: findlib [libname] [version]"
+	mainFuncs.findlib.description = "Searching ips for lib"
+	mainFuncs.findlib.run = function(x)
+		if not x or (x and not x.len == 2) or (x and x.len == 2 and x[1].len != 5) then return print(mainFuncs.findlib.use)
+		print(MainFuncsForCode.findLib(x[0] + ".so",x[1]))
 	end function
 
 	// mainFuncs.apt = {}

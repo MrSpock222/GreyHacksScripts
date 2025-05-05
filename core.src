@@ -1188,11 +1188,6 @@ MainFuncsForCode.fileExplorer = function(fileOrShell)
 	end while
 end function
 
-MainFuncsForCode.farmLibs = function
-	//TODO auto build database
-	//Keep in mind to just use the memcodes and not overflow so no attack is happening
-end function
-
 MainFuncsForCode.showMails = function
 	email = mail_login(user_mail_address,user_input("Password>",true).trim)
 
@@ -1203,7 +1198,7 @@ MainFuncsForCode.showMails = function
 	end for
 end function
 
-MainFuncsForCode.connectToWlan = function(amount = 1)
+MainFuncsForCode.connectToWlan = function
 	comp = Shells[0].shell.host_computer
 
 	//GET NET DEVICE
@@ -1225,57 +1220,45 @@ MainFuncsForCode.connectToWlan = function(amount = 1)
 
 
 	networks = comp.wifi_networks(netDevice)
-	if amount > networks.len then return print("There are only " + networks.len + " available")
-	if amount < 1 then amount = 1
 	res = Current.crypt.airmon("start", netDevice)
 	if res == -1 then return
 	if typeof(res) == "string" then return print("There was an error while switching monitoring mode: " + res)
 
 	vals = []
 	for network in networks
-		vals.push(network.split(" ")[1][:-1].to_int)
+		vals.push(network.split(" ")[1][:-1])
 	end for
 
 	vals.sort.reverse
 
-	for a in range(amount - 1,0)
-		print("<color=#0066EB>##############################################")
-
-		index = null
-
-		for e in range(0,networks.len-1)
-			if networks[e].split(" ")[1][:-1].to_int == vals[a] then 
-				index = e
+	for v in range(0,vals.len-1)
+		for n in networks
+			if n.matches(vals[v]) then 
+				vals[v] = n.split(" ")[0] + " " + vals[v] + "% " + n.split(" ")[2]
 				break
 			end if
 		end for
-
-		network = networks[index].split(" ")
-		bssid = network[0]
-		essid = network[2]
-		pwr = network[1][:-1].to_int
-		potentialAcks = 300000/(pwr+15)
-		bssid = network[0]
-		print("Finishing after " + round(potentialAcks) + "acks...")
-		startTime = time
-		Current.crypt.aireplay(bssid,essid,potentialAcks)
-	
-		wpw = Current.crypt.aircrack(home_dir + "/file.cap")
-		print("Finished after " + round(time - startTime,2) + "s")
-		print("<color=orange>Wifi password for " + essid + " is " + wpw)
-
-		if a == 0 then 
-			// while true
-			// 	userinput = user_input("Connect to best wlan [y/n] ",false,true).trim.lower
-			// 	if userinput == "y" then break
-			// 	if userinput == "n" then return
-			// end while	
-		
-			comp.connect_wifi(netDevice,bssid,essid,wpw)
-		end if
 	end for
 
+	text = "Choose a wifi to connect:"
+	option = MainFuncsForCode.chosesmth(vals,text)
 
+	clear_screen
+	network = vals[option].split(" ")
+	bssid = network[0]
+	essid = network[2]
+	pwr = network[1][:-1].to_int
+	potentialAcks = 300000/(pwr+15)
+	bssid = network[0]
+	print("Finishing after " + round(potentialAcks) + "acks...")
+	startTime = time
+	Current.crypt.aireplay(bssid,essid,potentialAcks)
+
+	wpw = Current.crypt.aircrack(home_dir + "/file.cap")
+	print("Finished after " + round(time - startTime,2) + "s")
+	print("<color=orange>Wifi password for " + essid + " is " + wpw)
+
+	comp.connect_wifi(netDevice,bssid,essid,wpw)
 	Current.crypt.airmon("stop", netDevice)
 	comp.File(home_dir + "/file.cap").delete
 
@@ -1448,4 +1431,38 @@ MainFuncsForCode.getLanInject = function(address)
 	end for
 
 	return ips
+end function
+
+MainFuncsForCode.findLib = function(libName, libVersion)
+
+	maxTries = 100
+	lokinFor = libName + " " + libVersion
+	print("Looking for " + lokinFor)
+
+	for try in range(1,maxTries)
+		print(try + "/" + maxTries + " checked ips")
+		ip = MainFuncsForCode.rndIp
+		if not is_valid_ip(ip) then continue
+		router = get_router(ip)
+		if not router then continue
+		ports = router.used_ports
+		ports.insert(0,0)
+	
+		for port in ports
+			if typeof(port) != "number" then 
+				if port.is_closed then continue
+				port = port.port_number
+			end if
+	
+			net_session = Current.metaxploit.net_use(ip, port)
+			if not net_session then continue
+			metaLib = net_session.dump_lib
+		
+			if metaLib.lib_name + " " + metaLib.version == lokinFor then return lokinFor + " found at <color=orange>" + ip
+		end for
+	end for
+
+	return "Could not find lib"
+	//TODO auto build database
+	//Keep in mind to just use the memcodes and not overflow so no attack is happening
 end function
