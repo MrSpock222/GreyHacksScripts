@@ -1,0 +1,16 @@
+FILE1="test 3.0.src"
+FILE2="core.src"
+OUTPUT="test_combined.src"
+PATTERN='import_code("/root/src/core.src")//override=core.src'
+
+> "$OUTPUT"
+
+while IFS= read -r line; do
+    if [[ "$line" == "$PATTERN" ]]; then
+        cat "$FILE2" >> "$OUTPUT"
+    else
+        echo "$line" >> "$OUTPUT"
+    fi
+done < "$FILE1"
+
+echo "Created $OUTPUT with import_code replaced by content of $FILE2"
