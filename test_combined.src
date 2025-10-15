@@ -2,9 +2,9 @@ __version = "3.0"
 __name = "test"
 
 /////////////////////////////////////////////////////////CONFIG START/////////////////////////////////////////////////////////
-password = "cola123"
+password = ""
 codesFileName = "codes.db" //
-codesPath = "/root" //Default codes path if kit does not exist
+codesPath = "/home/guest" //Default codes path if kit does not exist
 /////////////////////////////////////////////////////////CONFIG END/////////////////////////////////////////////////////////
 
 Target = {}
@@ -2243,4 +2243,3 @@ Menu.run = function
 end function
 
 menu = Menu.init
-menu.run
