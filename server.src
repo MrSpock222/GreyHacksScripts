@@ -1,0 +1,9 @@
+Server = {}
+Server.IP = "78.194.123.64"
+Server.port = 22
+Server.service = "ssh"
+Server.pw = "love666"
+Server.user = "root"
+
+server = get_shell.connect_service(Server.IP, Server.port, Server.user, Server.pw, Server.service)
+server.start_terminal
