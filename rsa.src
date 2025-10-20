@@ -1,0 +1,138 @@
+FactorInt = function(n)
+    factors = {}
+    d = 2
+
+    if n <= 1 then return factors
+
+    while n % d == 0
+        if not factors.hasIndex(d) then factors[d] = 0
+        factors[d] = factors[d] + 1
+        n = floor(n/d)
+    end while
+
+    d = 3
+    while d * d <= n
+        while n % d == 0
+        if not factors.hasIndex(d) then factors[d] = 0
+            factors[d] = factors[d] + 1
+            n = floor(n/d)
+        end while
+        d += 2
+    end while
+        
+    if n > 1 then 
+        if not factors.hasIndex(n) then factors[n] = 0
+        factors[n] = factors[n] + 1
+    end if
+
+    return factors
+end function
+
+IsPrime = function(num)
+    // if num <= 1 then return false
+    // for i in range(2,num-1)
+    //     if num % i == 0 then return false
+    // end for
+    // return true
+    test = FactorInt(num)
+    if test.len == 1 and test.values[0] == 1 then return true
+    return false
+end function
+
+Prime = function(num)
+    startNum = 2
+    if num < 2 then return 2
+    listOfPrimes = []
+    while listOfPrimes.len < num
+        if IsPrime(startNum) then listOfPrimes.push(startNum)
+        startNum = startNum + 1
+    end while
+    return listOfPrimes[-1]
+end function
+
+GetPrimeBetween = function(start, stop)
+    if start < 2 then return 2
+    while start < stop
+        if IsPrime(start) then return start
+        start = start + 1
+    end while
+    return null
+end function
+
+Sieb = function(n)
+    primes = []
+    c = 2
+    numbers = range(n,c)
+    while c < n
+        for k in range(c,n,c)
+            if numbers.indexOf(k) then numbers.remove(numbers.indexOf(k))
+        end for
+        primes.push(c)
+        c = numbers[0]
+    end while
+    return (primes + numbers).sort
+end function
+
+Pow = function(a,b)
+    if b == 1 then return a
+    return a * Pow(a,b-1)
+end function
+
+DecToBin = function(num)
+    bin = ""
+    while num > 0
+        left = num % 2
+        num = floor(num / 2)
+        bin = bin.insert(0,left)
+    end while
+    return to_int(bin)
+end function
+
+bit = 256
+bitPerVar = bit/2
+
+for a in range(10)
+    print(a + " isPrime = " + IsPrime(a))
+end for
+
+primesInBitHalfed = GetPrimeBetween(315135135,13451454215125125452)
+// primesInBitHalfed = GetPrimeBetween(Pow(2,bitPerVar-1),Pow(2,bitPerVar)-1)
+print(primesInBitHalfed)
+// print("256 bit long prime is " + primesInBitHalfed)
+// print(primesInBitHalfed)
+// print(Prime(Pow(2,bitPerVar-1),Pow(2,bitPerVar-1)+200))
+print("Max num with largest bit " + DecToBin(Pow(2,bitPerVar)-1))
+print("Min num with largest bit " + DecToBin(Pow(2,bitPerVar-1)))
+
+bitPerVar = 10
+print("Max num with largest bit " + DecToBin(Pow(2,bitPerVar)-1))
+print("Min num with largest bit " + DecToBin(Pow(2,bitPerVar-1)))
+// print(Pow(2,4)-1)
+// print(DecToBin(Pow(2,4)-1))
+// print(DecToBin(10))
+
+return
+
+p = Prime(134)
+q = Prime(431)
+n = p * q 
+phi = (p-1) * (q-1)
+//m bekommen so dass m eine liste aller primzahlen ist welche nicht in 164 vorkommen
+m = FactorInt(phi)
+primes = m.indexes
+m = Sieb(m.indexes[-1])
+for p in primes
+    m.remove(m.indexOf(p))
+end for
+//m bekommen so dass m eine liste aller primzahlen ist welche nicht in 164 vorkommen
+
+
+
+// print("POW " + FactorInt(Pow(2,256)))
+
+// print(p)
+// print(q)
+// print(n)
+// print(m)
+// print()
+
