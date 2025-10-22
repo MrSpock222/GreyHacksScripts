@@ -28,35 +28,131 @@ FactorInt = function(n)
     return factors
 end function
 
-IsPrime = function(num)
-    // if num <= 1 then return false
-    // for i in range(2,num-1)
-    //     if num % i == 0 then return false
-    // end for
-    // return true
-    test = FactorInt(num)
-    if test.len == 1 and test.values[0] == 1 then return true
-    return false
+Pow = function(a,b)
+    result = 1
+    base = a
+    exp = b
+
+    while exp > 0
+        if exp % 2 == 1 then
+            result = result * base
+        end if
+        exp = floor(exp / 2)
+        base = base * base
+    end while
+
+    return result
 end function
 
-Prime = function(num)
-    startNum = 2
-    if num < 2 then return 2
-    listOfPrimes = []
-    while listOfPrimes.len < num
-        if IsPrime(startNum) then listOfPrimes.push(startNum)
-        startNum = startNum + 1
+PowMod = function(a,b,mod)
+    result = 1
+    base = a % mod
+    exp = b
+    while exp > 0
+        if exp % 2 == 1 then
+            result = (result * base) % mod
+        end if
+        exp = floor(exp / 2)
+        base = (base * base) % mod
     end while
-    return listOfPrimes[-1]
+    return result
 end function
 
-GetPrimeBetween = function(start, stop)
-    if start < 2 then return 2
-    while start < stop
-        if IsPrime(start) then return start
-        start = start + 1
+Gcd = function(a,b)
+    while b
+        temp = b
+        b = a % b
+        a = temp
     end while
-    return null
+    return a
+end function
+
+ModInverse = function(a, m)
+    m0 = m
+    x0 = 0
+    x1 = 1
+    temp_a = a
+    temp_m = m
+    while temp_a > 1
+        q = floor(temp_a / temp_m)
+        t = temp_m
+        temp_m = temp_a % temp_m
+        temp_a = t
+        t = x0
+        x0 = x1 - q * x0
+        x1 = t
+    end while
+    if x1 < 0 then x1 = x1 + m0
+    return x1
+end function
+
+IsProbablePrime = function(n,k=40)
+    if n <= 3 then return n==2 or n==3
+    if n % 2 == 0 then return false
+
+    r = 0
+    d = n-1
+    while d % 2 == 0
+        d = d / 2
+        r = r + 1
+    end while
+
+    for testCount in range(k)
+        a = 2 + floor((n-3)*round(rnd,1))
+        x = PowMod(a,d,n)
+        if x==1 or x==n-1 then continue
+
+        flag = false
+        for i in range(r-1)
+            x = PowMod(x,2,n)
+            if x==n-1 then
+                flag = true
+                break
+            end if
+        end for
+
+        if not flag then return false
+    end for
+
+    return true
+end function
+
+DecToBin = function(num)
+    bin = ""
+    while num > 0
+        left = num % 2
+        num = floor(num / 2)
+        bin = bin.insert(0,left)
+    end while
+    return to_int(bin)
+end function
+
+BinToDec = function(num)
+    num = str(num)
+    res = num[0].to_int
+    for n in num[1:]
+        res = res * 2 + n.to_int
+    end for
+    return res
+end function
+
+CharToBinary = function(a)
+    return DecToBin(a.code)
+end function
+
+BinaryToChar = function(a)
+    return char(BinToDec(a))
+end function
+
+Random = function(min,max)
+    return floor(abs(max-min)*rnd) + min
+end function
+
+GetBitPrime = function(bit)
+    while true
+        num = Random(Pow(2,bit-1),Pow(2,bit)-1)
+        if IsProbablePrime(num,40) then return num
+    end while
 end function
 
 Sieb = function(n)
@@ -73,66 +169,71 @@ Sieb = function(n)
     return (primes + numbers).sort
 end function
 
-Pow = function(a,b)
-    if b == 1 then return a
-    return a * Pow(a,b-1)
-end function
 
-DecToBin = function(num)
-    bin = ""
-    while num > 0
-        left = num % 2
-        num = floor(num / 2)
-        bin = bin.insert(0,left)
+
+Funcs = {}
+Funcs.Setup = function
+    // ---- RSA ----
+    e = 1
+    // e = 65537
+    bit=13
+    p = GetBitPrime(bit) //IF PRIME GETS TO BIG DATA GETS LOST
+    q = GetBitPrime(bit) //IF PRIME GETS TO BIG DATA GETS LOST
+    n = p*q
+    print("Max size of message: " + n)
+    phi = (p-1)*(q-1)
+
+    m = FactorInt(phi)
+    primes = m.indexes
+    m = Sieb(m.indexes[-1])
+    for p in primes
+        m.remove(m.indexOf(p))
+    end for
+
+    GetE = function(e)
+        r = 0
+        while e < phi
+            r = m[Random(0,m.len-1)]
+            e = e * r
+        end while
+        return e / r
+    end function
+    e = GetE(e)
+    while e>phi or Gcd(e,phi)!=1 
+        e = GetE(e)
     end while
-    return to_int(bin)
+    //FIX ENDLEES LOOP
+    
+
+    d = ModInverse(e,phi)
+    print("Public key: "+e)
+    print("Private key: "+d)
+    return[e,d,n]
 end function
+Funcs.Encrypt = function(message) return PowMod(message,e,n) end function
+Funcs.Decrypt = function(message) return PowMod(message,d,n) end function
 
-bit = 256
-bitPerVar = bit/2
+set = Funcs.Setup
+e = set[0]
+d = set[1]
+n = set[2]
+message = "This message has been sent encrypted :O. And this fucking messages can be as long as i want and afdafdafdafdafdafdafdafdafdafdafdafdafd"
 
-for a in range(10)
-    print(a + " isPrime = " + IsPrime(a))
-end for
+delimeter = str(n+1)
 
-primesInBitHalfed = GetPrimeBetween(315135135,13451454215125125452)
-// primesInBitHalfed = GetPrimeBetween(Pow(2,bitPerVar-1),Pow(2,bitPerVar)-1)
-print(primesInBitHalfed)
-// print("256 bit long prime is " + primesInBitHalfed)
-// print(primesInBitHalfed)
-// print(Prime(Pow(2,bitPerVar-1),Pow(2,bitPerVar-1)+200))
-print("Max num with largest bit " + DecToBin(Pow(2,bitPerVar)-1))
-print("Min num with largest bit " + DecToBin(Pow(2,bitPerVar-1)))
+toSend = []                                             //MESSAGE READY TO SEND
+for c in message                                        //MESSAGE READY TO SEND
+    test = Funcs.Encrypt(CharToBinary(c))               //MESSAGE READY TO SEND
+    toSend.push(test)                                   //MESSAGE READY TO SEND
+end for                                                 //MESSAGE READY TO SEND
+toSend = toSend.join(delimeter)                         //MESSAGE READY TO SEND
 
-bitPerVar = 10
-print("Max num with largest bit " + DecToBin(Pow(2,bitPerVar)-1))
-print("Min num with largest bit " + DecToBin(Pow(2,bitPerVar-1)))
-// print(Pow(2,4)-1)
-// print(DecToBin(Pow(2,4)-1))
-// print(DecToBin(10))
+print(toSend)                                           //Sent and encrypted message
 
-return
+message = toSend.split(delimeter)                       //READING MESSAGE
+res = ""                                                //READING MESSAGE
+for c in message                                        //READING MESSAGE
+    res = res + BinaryToChar(Funcs.Decrypt(c.to_int))   //READING MESSAGE
+end for        
 
-p = Prime(134)
-q = Prime(431)
-n = p * q 
-phi = (p-1) * (q-1)
-//m bekommen so dass m eine liste aller primzahlen ist welche nicht in 164 vorkommen
-m = FactorInt(phi)
-primes = m.indexes
-m = Sieb(m.indexes[-1])
-for p in primes
-    m.remove(m.indexOf(p))
-end for
-//m bekommen so dass m eine liste aller primzahlen ist welche nicht in 164 vorkommen
-
-
-
-// print("POW " + FactorInt(Pow(2,256)))
-
-// print(p)
-// print(q)
-// print(n)
-// print(m)
-// print()
-
+print(res)                                              //RECEIVED MESSAGE
