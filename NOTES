@@ -1,11 +1,14 @@
 /////////////////////////////////////////TODO/////////////////////////////////////////////////////
 add func to nuke pc (also to root result of type file)
+
+Maybe add option to instantly clean kit after launch ??
+Maybe show "null" results smaller for every attack
+Maybe add log of recent results ? (Deciphers,ips,etc...)
 /////////////////////////////////////////TODO/////////////////////////////////////////////////////
 
 /////////////////////////////////////////TODO FOR REWORK /////////////////////////////////////////
-Offer a simple interface for remote connections so its less confusing (Done)
-Still needs to be completed tho
+Check still has to be finished! --> not working like intented
 
-Kit has to be launched from same terminal to be able to use libaries from hostshell
-Check still has to be finished!
+Push ports as ports so wheter the port is closed or not can be checked
+Read memory only once and not every time for faster results
 /////////////////////////////////////////TODO FOR REWORK /////////////////////////////////////////
